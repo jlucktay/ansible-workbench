@@ -1,2 +1,3 @@
-# ansible-workbench
-Messing around with Ansible
+# Ansible Workbench
+
+Messing around with [Ansible](https://www.ansible.com).

@@ -1,0 +1,9 @@
+all:
+  hosts:
+    rpi8-1.local:
+    rpi2-1.local:
+    rpi2-2.local:
+    rpi2-3.local:
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    remote_user: pi
