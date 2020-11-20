@@ -1,9 +1,23 @@
 all:
   hosts:
-    rpi8-1.local:
-    rpi2-1.local:
-    rpi2-2.local:
-    rpi2-3.local:
+    main:
+      ansible_host: rpi8-1.local
+    worker-one:
+      ansible_host: rpi2-1.local
+    worker-two:
+      ansible_host: rpi2-2.local
+    worker-three:
+      ansible_host: rpi2-3.local
+  children:
+    raspberry_pi:
+      hosts:
+        main: {}
+        worker-one: {}
+        worker-two: {}
+        worker-three: {}
+    monitoring_server:
+      hosts:
+        main: {}
   vars:
     ansible_python_interpreter: /usr/bin/python3
-    remote_user: pi
+    ansible_user: pi
