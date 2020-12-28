@@ -1,0 +1,36 @@
+# setup-lb.yaml
+---
+- hosts: loadbalancers
+  become: true
+  tasks:
+    - name: Create Apache load balancer configuration from Jinja template
+      template:
+        src: ../config/lb-config.j2
+        dest: /etc/apache2/conf-available/lb.conf
+        owner: root
+        group: root
+        mode: 064
+
+    - name: Enable Apache load balancer configuration
+      command:
+        cmd: a2enconf lb
+        creates: /etc/apache2/conf-enabled/lb.conf
+      register: a2enconf
+
+    - name: Enable the Apache module lbmethod_byrequests
+      community.general.apache2_module:
+        state: present
+        name: lbmethod_byrequests
+
+    - name: Enable the Apache module proxy_http
+      community.general.apache2_module:
+        state: present
+        name: proxy_http
+
+    - name: Restart apache
+      service:
+        name: apache2
+        state: restarted
+
+    - debug:
+        var: a2enconf.stdout_lines
