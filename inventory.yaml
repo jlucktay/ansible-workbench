@@ -18,6 +18,22 @@ all:
     monitoring_server:
       hosts:
         main: {}
+
+    # acloud.guru
+    webservers:
+      hosts:
+        worker-one: {}
+        worker-two: {}
+        worker-three: {}
+    loadbalancers:
+      hosts:
+        main: {}
+    local:
+      hosts:
+        control:
+          ansible_connection: local
+    # acloud.guru
+
   vars:
     ansible_python_interpreter: /usr/bin/python3
     ansible_user: pi
