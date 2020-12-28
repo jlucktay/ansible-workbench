@@ -35,7 +35,7 @@
       apt:
         name:
           - apache2
-          - php
+          - php7.3
         state: present
 
     - name: Configure Apache to listen on my custom HTTP port
