@@ -3,10 +3,30 @@
 - hosts: loadbalancers
   become: true
   tasks:
-    - name: Installing apache
+    - name: Installing Apache
       apt:
         name: apache2
         state: present
+
+    - name: Configure Apache to listen on my custom HTTP port
+      lineinfile:
+        path: /etc/apache2/ports.conf
+        regexp: ^Listen 80$
+        line: "Listen 32780"
+        validate: "/usr/sbin/apache2ctl -f %s -t"
+
+    - name: Configure Apache to listen on my custom HTTPS port
+      replace:
+        path: /etc/apache2/ports.conf
+        regexp: Listen 443$
+        replace: "Listen 32743"
+        validate: "/usr/sbin/apache2ctl -f %s -t"
+
+    - name: Ensure Apache starts
+      service:
+        name: apache2
+        state: started
+        enabled: yes
 
 - hosts: webservers
   become: true
@@ -17,3 +37,23 @@
           - apache2
           - php
         state: present
+
+    - name: Configure Apache to listen on my custom HTTP port
+      lineinfile:
+        path: /etc/apache2/ports.conf
+        regexp: ^Listen 80$
+        line: "Listen 32780"
+        validate: "/usr/sbin/apache2ctl -f %s -t"
+
+    - name: Configure Apache to listen on my custom HTTPS port
+      replace:
+        path: /etc/apache2/ports.conf
+        regexp: Listen 443$
+        replace: "Listen 32743"
+        validate: "/usr/sbin/apache2ctl -f %s -t"
+
+    - name: Ensure Apache starts
+      service:
+        name: apache2
+        state: started
+        enabled: yes
