@@ -3,3 +3,4 @@
 - import_playbook: install-services.yaml
 - import_playbook: setup-app.yaml
 - import_playbook: setup-lb.yaml
+- import_playbook: check-status.yaml
