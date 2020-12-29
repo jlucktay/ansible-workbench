@@ -9,6 +9,10 @@
         warn: no
       changed_when: false
 
+    - name: This will not fail
+      command: /bin/false
+      ignore_errors: yes
+
     - name: Gather facts about services
       service_facts:
 
