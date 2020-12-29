@@ -14,6 +14,11 @@
         path: /var/www/html/index.html
         state: absent
 
+    - name: Create simple info page
+      copy:
+        dest: /var/www/html/info.php
+        content: "<h1>Info about our webserver: {{ ansible_hostname }}</h1>"
+
     - name: Configure php.ini file
       lineinfile:
         path: /etc/php/7.3/apache2/php.ini
