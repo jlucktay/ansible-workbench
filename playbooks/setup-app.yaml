@@ -12,6 +12,7 @@
         src: ../index.php
         dest: "{{ path_to_app }}"
         mode: 0755
+      tags: upload
 
     - name: Remove default HTML file
       file:
@@ -22,6 +23,7 @@
       copy:
         dest: "{{ path_to_app }}/info.php"
         content: "<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>"
+      tags: create
 
     - name: Configure php.ini file
       lineinfile:
