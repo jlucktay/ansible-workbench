@@ -1,0 +1,5 @@
+# all-playbooks.yaml
+---
+- import_playbook: install-services.yaml
+- import_playbook: setup-app.yaml
+- import_playbook: setup-lb.yaml
