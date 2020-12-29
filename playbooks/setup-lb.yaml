@@ -16,21 +16,25 @@
         cmd: a2enconf lb
         creates: /etc/apache2/conf-enabled/lb.conf
       register: a2enconf
+      notify: Restart Apache
 
     - name: Enable the Apache module lbmethod_byrequests
       community.general.apache2_module:
         state: present
         name: lbmethod_byrequests
+      notify: Restart Apache
 
     - name: Enable the Apache module proxy_http
       community.general.apache2_module:
         state: present
         name: proxy_http
-
-    - name: Restart apache
-      service:
-        name: apache2
-        state: restarted
+      notify: Restart Apache
 
     - debug:
         var: a2enconf.stdout_lines
+
+  handlers:
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
