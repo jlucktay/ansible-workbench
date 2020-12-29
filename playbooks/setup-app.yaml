@@ -6,7 +6,14 @@
   vars:
     path_to_app: "/var/www/html"
 
+  vars_files:
+    - ../vars/secret-variables.yaml
+
   tasks:
+    - name: Use secret password here
+      debug:
+        msg: "{{ secret_password }}"
+
     - name: Upload application file
       copy:
         src: ../index.php
