@@ -12,6 +12,7 @@
     - name: This will not fail
       command: /bin/false
       ignore_errors: yes
+      changed_when: false
 
     - name: Gather facts about services
       service_facts:

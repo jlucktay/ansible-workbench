@@ -2,7 +2,7 @@
 # tasks file for roles/webservers
 - name: Upload application file
   copy:
-    src: ../files/index.php
+    src: files/index.php
     dest: "{{ path_to_app }}"
     mode: 0755
 
@@ -15,10 +15,12 @@
   copy:
     dest: "{{ path_to_app }}/info.php"
     content: "<h1>Info about our webserver: {{ ansible_hostname }}</h1>"
+    mode: "064"
 
 - name: See directory contents
   command: ls -la {{ path_to_app }}
   register: dir_contents
+  changed_when: false
 
 - name: Debug directory contents
   debug:

@@ -1,0 +1,13 @@
+# playbook.yaml
+---
+- name: Boilerplate across all Pi hosts
+  hosts: raspberry_pi
+  roles:
+    - common
+    - rpi_exporter
+    - node_exporter
+
+- name: Main monitoring server only
+  hosts: monitoring_server
+  roles:
+    - monitoring_server

@@ -38,6 +38,7 @@
       copy:
         dest: "{{ path_to_app }}/info.php"
         content: "<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>"
+        mode: "064"
       when: create_var == 'yes'
       tags: create
 

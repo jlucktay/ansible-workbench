@@ -4,3 +4,4 @@
   tasks:
     - name: Get OS type
       shell: uname
+      changed_when: false

@@ -9,7 +9,7 @@
         dest: /etc/apache2/conf-available/lb.conf
         owner: root
         group: root
-        mode: 064
+        mode: "064"
 
     - name: Enable Apache load balancer configuration
       command:
