@@ -1,0 +1,47 @@
+# cleanup.yaml
+---
+- hosts: loadbalancers
+  become: true
+  tasks:
+    - name: Remove Apache package from load balancer
+      apt:
+        name: apache2
+        state: absent
+
+- hosts: webservers
+  become: true
+  tasks:
+    - name: Remove services from web servers
+      apt:
+        name:
+          - apache2
+          - php7.3
+        state: absent
+
+    - name: Clean up PHP config files
+      file:
+        path: /etc/php
+        state: absent
+
+    - name: Clean up web files
+      file:
+        path: /var/www
+        state: absent
+
+- hosts: loadbalancers:webservers
+  become: true
+  tasks:
+    - name: Shut off Apache service
+      service:
+        name: apache2
+        enabled: no
+        state: stopped
+
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
+
+    - name: Clean up Apache config files
+      file:
+        path: /etc/apache2
+        state: absent
