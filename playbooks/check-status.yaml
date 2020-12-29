@@ -1,0 +1,9 @@
+# check-status.yaml
+---
+- hosts: webservers:loadbalancers
+  tasks:
+    - name: Check status of Apache
+      service_facts:
+
+    - debug:
+        var: ansible_facts.services['apache2.service']
