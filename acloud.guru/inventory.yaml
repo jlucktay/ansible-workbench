@@ -9,15 +9,18 @@ all:
     worker-three:
       ansible_host: rpi2-3.local
   children:
-    raspberry_pi:
+    webservers:
       hosts:
-        main: {}
         worker-one: {}
         worker-two: {}
         worker-three: {}
-    monitoring_server:
+    loadbalancers:
       hosts:
         main: {}
+    local:
+      hosts:
+        control:
+          ansible_connection: local
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
