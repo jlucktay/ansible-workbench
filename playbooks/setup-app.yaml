@@ -21,15 +21,7 @@
     - name: Create simple info page
       copy:
         dest: "{{ path_to_app }}/info.php"
-        content: "<h1>Info about our webserver: {{ ansible_hostname }}</h1>"
-
-    - name: See directory contents
-      command: ls -la {{ path_to_app }}
-      register: dir_contents
-
-    - name: Debug directory contents
-      debug:
-        msg: "{{ dir_contents }}"
+        content: "<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>"
 
     - name: Configure php.ini file
       lineinfile:
