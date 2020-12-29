@@ -2,8 +2,13 @@
 ---
 - hosts: webservers:loadbalancers
   tasks:
-    - name: Check status of Apache
+    - name: Gather facts about services
       service_facts:
 
-    - debug:
-        var: ansible_facts.services['apache2.service']
+    - name: Check status of Apache
+      debug:
+        msg: >-
+          {{ ansible_facts.services['apache2.service']['name'] }} /
+          {{ ansible_facts.services['apache2.service']['source'] }} /
+          {{ ansible_facts.services['apache2.service']['state'] }} /
+          {{ ansible_facts.services['apache2.service']['status'] }}
