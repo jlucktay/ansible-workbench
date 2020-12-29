@@ -9,6 +9,13 @@
   vars_files:
     - ../vars/secret-variables.yaml
 
+  vars_prompt:
+    - name: "upload_var"
+      prompt: "Upload the index.php file?"
+
+    - name: "create_var"
+      prompt: "Create info.php page?"
+
   tasks:
     - name: Use secret password here
       debug:
@@ -19,6 +26,7 @@
         src: ../index.php
         dest: "{{ path_to_app }}"
         mode: 0755
+      when: upload_var == 'yes'
       tags: upload
 
     - name: Remove default HTML file
@@ -30,6 +38,7 @@
       copy:
         dest: "{{ path_to_app }}/info.php"
         content: "<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>"
+      when: create_var == 'yes'
       tags: create
 
     - name: Configure php.ini file
