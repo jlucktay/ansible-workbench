@@ -1,0 +1,31 @@
+# k8s-maintenance.yaml
+---
+- name: Prepare to upgrade a node in a Kubernetes cluster
+  become: true
+  hosts: raspberry_pi
+  serial: 1
+
+  tasks:
+    - name: Take kubeadm off hold
+      dpkg_selections:
+        name: kubeadm
+        selection: install
+
+    - name: Upgrade kubeadm to v1.20.1
+      apt:
+        name: kubeadm=1.20.1-00
+        state: present
+        update_cache: true
+
+    - name: Put kubeadm back on hold
+      dpkg_selections:
+        name: kubeadm
+        selection: hold
+
+    - name: Pull images for imminent upgrade
+      command:
+        argv:
+          - kubeadm
+          - config
+          - images
+          - pull
