@@ -1,8 +1,8 @@
 # roles/monitoring_server/tasks/main.yaml
 ---
----
 - name: Creating prometheus user group
-  group: name="{{groupId}}"
+  group:
+    name: "{{groupId}}"
   become: yes
   become_user: root
   become_method: sudo
@@ -96,7 +96,8 @@
   uri:
     url: http://localhost:9090
     method: GET
-    status_code: 200
+    status_code:
+      - 200
 
 - name: "Download Grafana"
   get_url:
