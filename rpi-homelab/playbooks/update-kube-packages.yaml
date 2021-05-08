@@ -1,0 +1,66 @@
+# update-kube-packages.yaml
+# Prepare to upgrade nodes in the Kubernetes cluster
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#installing-kubeadm-on-your-hosts
+---
+- name: Update kube packages on nodes in the Kubernetes cluster
+  become: true
+  hosts: raspberry_pi
+  tasks:
+    - name: Take kubeadm off hold
+      ansible.builtin.dpkg_selections:
+        name: kubeadm
+        selection: install
+
+    - name: Take kubectl off hold
+      ansible.builtin.dpkg_selections:
+        name: kubectl
+        selection: install
+
+    - name: Take kubelet off hold
+      ansible.builtin.dpkg_selections:
+        name: kubelet
+        selection: install
+
+    # 2021-05-08:
+    # https://github.com/kubernetes/kubernetes/releases/latest
+    # $ sudo apt update && apt-cache madison kubeadm | head
+    # NOTE: we target the second-highest minor version
+    - name: Upgrade packages to v1.20.6
+      ansible.builtin.apt:
+        name:
+          - kubeadm=1.20.6-00
+          - kubectl=1.20.6-00
+          - kubelet=1.20.6-00
+        state: present
+        update_cache: true
+
+    - name: Put kubeadm back on hold
+      ansible.builtin.dpkg_selections:
+        name: kubeadm
+        selection: hold
+
+    - name: Put kubectl back on hold
+      ansible.builtin.dpkg_selections:
+        name: kubectl
+        selection: hold
+
+    - name: Put kubelet back on hold
+      ansible.builtin.dpkg_selections:
+        name: kubelet
+        selection: hold
+
+- name: Pull images for imminent upgrade, one node at a time
+  serial: 1
+  become: true
+  hosts: raspberry_pi
+  tasks:
+    - name: Pull images for imminent upgrade
+      register: image_pull
+      ansible.builtin.command:
+        argv:
+          - kubeadm
+          - config
+          - images
+          - pull
+      changed_when:
+        - '"[config/images] Pulled" in image_pull.stdout'
