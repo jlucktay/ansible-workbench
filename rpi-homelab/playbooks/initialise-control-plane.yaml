@@ -1,0 +1,45 @@
+# initialise-control-plane.yaml
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node
+---
+- name: Initialise the control-plane node
+  become: true
+  hosts: main
+  tasks:
+    - name: Run 'kubeadm init' on the control-plane node
+      register: kubeadm_init
+      command:
+        argv:
+          - kubeadm
+          - init
+          - --pod-network-cidr=192.168.27.0/24
+      changed_when: false
+
+    - name: Debug - kubeadm init output
+      debug:
+        msg: "{{ kubeadm_init }}"
+
+- name: Install a Pod network add-on
+  become: true
+  hosts: main
+  tasks:
+    - name: Get Calico manifest
+      ansible.builtin.get_url:
+        url: https://docs.projectcalico.org/manifests/calico.yaml
+        dest: /tmp/calico.yaml
+
+    # - name: Update etcd endpoint in Calico manifest
+    #   ansible.builtin.lineinfile:
+    #     path: /tmp/calico-etcd.yaml
+    #     regexp: "^  etcd_endpoints: "
+    #     line: '  etcd_endpoints: "https://192.168.86.37:2379"'
+
+    - name: Install openshift Python package
+      ansible.builtin.pip:
+        name: openshift
+
+    - name: Apply Calico manifest to the cluster
+      community.kubernetes.k8s:
+        state: present
+        src: /tmp/calico.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
