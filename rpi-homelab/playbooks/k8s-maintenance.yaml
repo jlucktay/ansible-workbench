@@ -11,12 +11,13 @@
         name: kubeadm
         selection: install
 
-    # 2021-03-06:
+    # 2021-05-08:
     # https://github.com/kubernetes/kubernetes/releases/latest
-    # sudo apt update && apt-cache madison kubeadm | head
-    - name: Upgrade kubeadm to v1.20.4
+    # $ sudo apt update && apt-cache madison kubeadm | head
+    # NOTE: we target the second-highest minor version
+    - name: Upgrade kubeadm to v1.20.6
       apt:
-        name: kubeadm=1.20.4-00
+        name: kubeadm=1.20.6-00
         state: present
         update_cache: true
 
