@@ -1,10 +1,9 @@
 # k8s-maintenance.yaml
+# Prepare to upgrade nodes in the Kubernetes cluster
 ---
-- name: Prepare to upgrade a node in a Kubernetes cluster
+- name: Update kubeadm on nodes in the Kubernetes cluster
   become: true
   hosts: raspberry_pi
-  serial: 1
-
   tasks:
     - name: Take kubeadm off hold
       dpkg_selections:
@@ -26,6 +25,11 @@
         name: kubeadm
         selection: hold
 
+- name: Pull images for imminent upgrade, one node at a time
+  serial: 1
+  become: true
+  hosts: raspberry_pi
+  tasks:
     - name: Pull images for imminent upgrade
       register: image_pull
       command:
