@@ -20,6 +20,11 @@ all:
     monitoring_server:
       hosts:
         main: {}
+    workers:
+      hosts:
+        worker-one: {}
+        worker-two: {}
+        worker-three: {}
 
   vars:
     ansible_python_interpreter: /usr/bin/python3

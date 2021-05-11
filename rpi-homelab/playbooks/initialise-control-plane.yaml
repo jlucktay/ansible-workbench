@@ -6,17 +6,9 @@
   hosts: main
   tasks:
     - name: Run 'kubeadm init' on the control-plane node
+      ansible.builtin.command: kubeadm init --pod-network-cidr=192.168.27.0/24
       register: kubeadm_init
-      command:
-        argv:
-          - kubeadm
-          - init
-          - --pod-network-cidr=192.168.27.0/24
       changed_when: false
-
-    - name: Debug - kubeadm init output
-      debug:
-        msg: "{{ kubeadm_init }}"
 
 - name: Install a Pod network add-on
   become: true
@@ -26,12 +18,6 @@
       ansible.builtin.get_url:
         url: https://docs.projectcalico.org/manifests/calico.yaml
         dest: /tmp/calico.yaml
-
-    # - name: Update etcd endpoint in Calico manifest
-    #   ansible.builtin.lineinfile:
-    #     path: /tmp/calico-etcd.yaml
-    #     regexp: "^  etcd_endpoints: "
-    #     line: '  etcd_endpoints: "https://192.168.86.37:2379"'
 
     - name: Install openshift Python package
       ansible.builtin.pip:
@@ -43,3 +29,52 @@
         src: /tmp/calico.yaml
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Patch to resolve iptables issue - https://github.com/projectcalico/calico/issues/4487
+      community.kubernetes.k8s:
+        state: present
+        resource_definition:
+          apiVersion: crd.projectcalico.org/v1
+          kind: FelixConfiguration
+          metadata:
+            name: default
+            namespace: default
+          spec:
+            iptablesBackend: Legacy
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Run regexes and set 'kubeadm join' command as fact
+      ansible.builtin.set_fact:
+        kubeadm_join: "{{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') }}"
+      vars:
+        regexp: "(?is)(kubeadm join .*)"
+
+- name: Join worker nodes to cluster
+  become: true
+  hosts: workers
+  tasks:
+    - name: Run 'kubeadm join' on workers
+      ansible.builtin.command: "{{ hostvars['main']['kubeadm_join'][0] }}"
+
+- name: De-taint control plane
+  become: true
+  hosts: main
+  tasks:
+    - name: De-taint control plane
+      ansible.builtin.command: kubectl taint nodes --all node-role.kubernetes.io/master-
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Retrieve kubeconfig to local
+  become: true
+  hosts: main
+  tasks:
+    - name: Generate kubectl credential from main
+      ansible.builtin.shell: kubeadm alpha kubeconfig user --client-name=jltykmbp --config= >> /tmp/rpi-kubeconfig.yaml
+
+    - name: Fetch kubeconfig into local file
+      ansible.builtin.fetch:
+        src: /tmp/rpi-kubeconfig.yaml
+        dest: /tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml
