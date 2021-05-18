@@ -55,12 +55,6 @@
   hosts: raspberry_pi
   tasks:
     - name: Pull images for imminent upgrade
+      ansible.builtin.command: kubeadm config images pull
       register: image_pull
-      ansible.builtin.command:
-        argv:
-          - kubeadm
-          - config
-          - images
-          - pull
-      changed_when:
-        - '"[config/images] Pulled" in image_pull.stdout'
+      changed_when: '"[config/images] Pulled" in image_pull.stdout'
