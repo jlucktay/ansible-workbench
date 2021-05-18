@@ -9,6 +9,13 @@
       ansible.builtin.command: kubeadm init --pod-network-cidr=192.168.27.0/24
       register: kubeadm_init
       changed_when: false
+      tags: [cp_only]
+
+    - name: Run regexes and set 'kubeadm join' command as fact
+      ansible.builtin.set_fact:
+        kubeadm_join: "{{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') }}"
+      vars:
+        regexp: "(?is)(kubeadm join .*)"
 
 - name: Install a Pod network add-on
   become: true
@@ -25,10 +32,12 @@
 
     - name: Apply Calico manifest to the cluster
       community.kubernetes.k8s:
-        state: present
         src: /tmp/calico.yaml
+        state: present
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+
+    # vvv - TODO: candidate for removal; keep an eye on the GH issue - vvv
 
     - name: Patch to resolve iptables issue - https://github.com/projectcalico/calico/issues/4487
       community.kubernetes.k8s:
@@ -44,11 +53,7 @@
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
-    - name: Run regexes and set 'kubeadm join' command as fact
-      ansible.builtin.set_fact:
-        kubeadm_join: "{{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') }}"
-      vars:
-        regexp: "(?is)(kubeadm join .*)"
+    # ^^^ - TODO: candidate for removal; keep an eye on the GH issue - ^^^
 
 - name: Join worker nodes to cluster
   become: true
@@ -70,11 +75,20 @@
 - name: Retrieve kubeconfig to local
   become: true
   hosts: main
+  tags: [cp_only]
   tasks:
     - name: Generate kubectl credential from main
-      ansible.builtin.shell: kubeadm alpha kubeconfig user --client-name=jltykmbp --config= >> /tmp/rpi-kubeconfig.yaml
+      ansible.builtin.shell: >-
+        kubeadm alpha kubeconfig user
+        --client-name=jltykmbp --config=
+        >>
+        "{{ kubeconfig_filename }}"
 
-    - name: Fetch kubeconfig into local file
+    - name: Set temporary kubeconfig filename as fact
+      ansible.builtin.set_fact:
+        kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+
+    - name: Fetch kubeconfig from CP into local file
       ansible.builtin.fetch:
-        src: /tmp/rpi-kubeconfig.yaml
-        dest: /tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml
+        src: "{{ kubeconfig_filename }}"
+        dest: "{{ kubeconfig_filename }}"
