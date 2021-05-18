@@ -1,0 +1,49 @@
+# teardown.yaml
+# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#tear-down
+---
+- name: Drain the worker nodes
+  hosts: localhost
+  tasks:
+    - name: Drain worker node
+      ansible.builtin.command: >-
+        kubectl drain {{ hostvars[item]['ansible_host'].split(".")[0] }}
+        --delete-emptydir-data --force --ignore-daemonsets
+      with_items: "{{ groups['workers'] }}"
+
+- name: Reset and clean up the worker nodes
+  become: true
+  hosts: workers
+  tasks:
+    - name: Run kubeadm reset
+      ansible.builtin.command: kubeadm reset --force
+
+    - name: Post-reset clean up
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/cni/net.d
+        - /home/pi/.kube
+        - /root/.kube
+
+    - name: Reset and clean up iptables rules
+      ansible.builtin.shell: iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+
+- name: Delete the worker nodes
+  hosts: localhost
+  tasks:
+    - name: Delete worker node
+      ansible.builtin.command: kubectl delete node {{ hostvars[item]['ansible_host'].split(".")[0] }}
+      with_items: "{{ groups['workers'] }}"
+
+- name: Reset and clean up the control plane
+  become: true
+  hosts: main
+  tasks:
+    - name: Run kubeadm reset
+      ansible.builtin.shell: kubeadm reset --force
+
+    - name: Post-reset clean up
+      ansible.builtin.file:
+        path: /etc/kubernetes
+        state: absent
