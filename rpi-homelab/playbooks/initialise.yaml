@@ -1,4 +1,4 @@
-# initialise-control-plane.yaml
+# initialise.yaml
 # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node
 ---
 - name: Initialise the control-plane node
