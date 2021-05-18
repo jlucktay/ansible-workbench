@@ -3,6 +3,7 @@
 ---
 - name: Initialise the control-plane node
   become: true
+  gather_facts: no
   hosts: main
   tasks:
     - name: Run 'kubeadm init' on the control-plane node
@@ -19,6 +20,7 @@
 
 - name: Install a Pod network add-on
   become: true
+  gather_facts: no
   hosts: main
   tasks:
     - name: Get Calico manifest
@@ -57,6 +59,7 @@
 
 - name: Join worker nodes to cluster
   become: true
+  gather_facts: no
   hosts: workers
   tasks:
     - name: Run 'kubeadm join' on workers
@@ -64,6 +67,7 @@
 
 - name: De-taint control plane
   become: true
+  gather_facts: no
   hosts: main
   tasks:
     - name: De-taint control plane
@@ -97,3 +101,44 @@
       ansible.builtin.file:
         path: "{{ kubeconfig_filename }}"
         state: absent
+
+- name: Fold new kubeconfig into local
+  # TODO: try slurping instead
+  hosts: localhost
+  tasks:
+    - name: Set local kubeconfig filename fact, based on copy from remote
+      ansible.builtin.set_fact:
+        kubeconfig_filename: "{{ path_components | join('/') }}"
+      vars:
+        path_components:
+          - "{{ hostvars['main']['kubeconfig_filename'] }}"
+          - "main"
+          - "{{ hostvars['main']['kubeconfig_filename'] }}"
+
+    - name: Extract the data from the YAML file into a fact
+      ansible.builtin.set_fact:
+        original_kubeconfig: "{{ lookup('file', kubeconfig_filename) | from_yaml }}"
+
+    - name: Clean up temporary kubeconfig file
+      ansible.builtin.file:
+        path: "{{ hostvars['main']['kubeconfig_filename'] }}"
+        state: absent
+
+    - name: Update the fact
+      ansible.utils.update_fact:
+        updates:
+          - path: original_kubeconfig.clusters[0].cluster.name
+            value: rpi
+          - path: original_kubeconfig.contexts[0].context.cluster
+            value: rpi
+          - path: original_kubeconfig.contexts[0].name
+            value: jltykmbp@rpi
+          - path: original_kubeconfig.current-context
+            value: jltykmbp@rpi
+      register: updated_kubeconfig
+
+    - name: Write updated kubeconfig fact back to a YAML file
+      copy:
+        content: "{{ updated_kubeconfig.original_kubeconfig | to_nice_yaml }}"
+        dest: "/tmp/kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+        mode: 0400
