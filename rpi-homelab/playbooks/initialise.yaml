@@ -92,3 +92,8 @@
       ansible.builtin.fetch:
         src: "{{ kubeconfig_filename }}"
         dest: "{{ kubeconfig_filename }}"
+
+    - name: Clean up temporary kubeconfig file
+      ansible.builtin.file:
+        path: "{{ kubeconfig_filename }}"
+        state: absent
