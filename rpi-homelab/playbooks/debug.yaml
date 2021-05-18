@@ -1,0 +1,72 @@
+---
+- name: Debug things on localhost
+  hosts: localhost
+  tasks:
+    - name: Print Module Variables ("vars")
+      vars:
+        msg: "{{ vars | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_vars
+
+    - name: Print Environment Variables ("environment")
+      vars:
+        msg: "{{ environment | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_environment
+
+    - name: Print GROUP NAMES Variables ("group_names")
+      vars:
+        msg: "{{ group_names | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_group_names
+
+    - name: Print GROUPS Variables ("groups")
+      vars:
+        msg: "{{ groups | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_groups
+
+    - name: Print HOST Variables ("hostvars")
+      vars:
+        msg: "{{ hostvars | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_hostvars
+
+    - name: Print Ansible Facts ("ansible_facts")
+      vars:
+        msg: "{{ ansible_facts | to_nice_json }}"
+      ansible.builtin.debug:
+        msg: "{{ msg.split('\n') }}"
+      tags:
+        - debug_ansible_facts
+
+    - name: groups['workers']
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      with_items: "{{ groups['workers'] }}"
+      tags:
+        - any
+
+    - name: query
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ query('inventory_hostnames', 'workers') }}"
+      tags:
+        - any
+
+    - name: combo
+      ansible.builtin.debug:
+        msg: "{{ hostvars[item]['ansible_host'] }}"
+      with_items: "{{ groups['workers'] }}"
+      tags:
+        - any
