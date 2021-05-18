@@ -77,16 +77,16 @@
   hosts: main
   tags: [cp_only]
   tasks:
+    - name: Set temporary kubeconfig filename as fact
+      ansible.builtin.set_fact:
+        kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+
     - name: Generate kubectl credential from main
       ansible.builtin.shell: >-
         kubeadm alpha kubeconfig user
         --client-name=jltykmbp --config=
         >>
         "{{ kubeconfig_filename }}"
-
-    - name: Set temporary kubeconfig filename as fact
-      ansible.builtin.set_fact:
-        kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
 
     - name: Fetch kubeconfig from CP into local file
       ansible.builtin.fetch:
