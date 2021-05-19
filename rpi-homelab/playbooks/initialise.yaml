@@ -61,6 +61,7 @@
   become: true
   gather_facts: no
   hosts: workers
+  serial: 1
   tasks:
     - name: Run 'kubeadm join' on workers
       ansible.builtin.command: "{{ hostvars['main']['kubeadm_join'][0] }}"
