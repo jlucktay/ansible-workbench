@@ -39,6 +39,7 @@
 - name: Reset and clean up the control plane
   become: true
   hosts: main
+  tags: [cp_only]
   tasks:
     - name: Run kubeadm reset
       ansible.builtin.shell: kubeadm reset --force
