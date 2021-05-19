@@ -127,7 +127,7 @@
     - name: Update the fact
       ansible.utils.update_fact:
         updates:
-          - path: original_kubeconfig.clusters[0].cluster.name
+          - path: original_kubeconfig.clusters[0].name
             value: rpi
           - path: original_kubeconfig.contexts[0].context.cluster
             value: rpi
@@ -137,8 +137,47 @@
             value: jltykmbp@rpi
       register: updated_kubeconfig
 
+    - name: Set updated kubeconfig file path as a fact
+      ansible.builtin.set_fact:
+        updated_kubeconfig_file: "/tmp/kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+
     - name: Write updated kubeconfig fact back to a YAML file
-      copy:
+      ansible.builtin.copy:
         content: "{{ updated_kubeconfig.original_kubeconfig | to_nice_yaml }}"
-        dest: "/tmp/kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+        dest: "{{ updated_kubeconfig_file }}"
         mode: 0400
+
+    - name: Set merged kubeconfig file path as a fact
+      ansible.builtin.set_fact:
+        merged_kubeconfig_file: "/tmp/kubeconfig.merged.{{ ansible_date_time.iso8601 }}.yaml"
+
+    # https://github.com/mikefarah/yq/issues/774#issuecomment-819929091
+    - name: Merge with my current kubeconfig
+      ansible.builtin.shell: >-
+        yq eval-all '. as $item ireduce ({}; . *d $item )'
+        "{{ ansible_env.HOME }}/.kube/config"
+        "{{ updated_kubeconfig_file }}"
+        >>
+        "{{ merged_kubeconfig_file }}"
+
+    - name: Clean up temporary merged kubeconfig file
+      ansible.builtin.file:
+        path: "{{ updated_kubeconfig_file }}"
+        state: absent
+
+    - name: Move current kubeconfig out of the way, to keep a backup
+      ansible.builtin.command: >-
+        mv
+        {{ ansible_env.HOME }}/.kube/config
+        {{ ansible_env.HOME }}/.kube/config.{{ ansible_date_time.iso8601 }}
+
+    - name: Move updated/merged kubeconfig into place
+      ansible.builtin.command: >-
+        mv
+        {{ merged_kubeconfig_file }}
+        {{ ansible_env.HOME }}/.kube/config
+
+    - name: Set mode on kubeconfig
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.kube/config"
+        mode: 0600
