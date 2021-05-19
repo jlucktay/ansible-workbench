@@ -65,10 +65,10 @@
     - name: Run 'kubeadm join' on workers
       ansible.builtin.command: "{{ hostvars['main']['kubeadm_join'][0] }}"
 
-- name: De-taint control plane
+- name: Post-init setup on control plane, and retrieve kubeconfig to local
   become: true
-  gather_facts: no
   hosts: main
+  tags: [cp_only]
   tasks:
     - name: De-taint control plane
       ansible.builtin.command: kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -76,11 +76,6 @@
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
-- name: Retrieve kubeconfig to local
-  become: true
-  hosts: main
-  tags: [cp_only]
-  tasks:
     - name: Set temporary kubeconfig filename as fact
       ansible.builtin.set_fact:
         kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
@@ -91,6 +86,13 @@
         --client-name=jltykmbp --config=
         >>
         "{{ kubeconfig_filename }}"
+
+    - name: Bind cluster admin role to my user
+      ansible.builtin.command: >-
+        kubectl create clusterrolebinding jltykmbp-cluster-admin-binding
+        --clusterrole=cluster-admin --user=jltykmbp
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
 
     - name: Fetch kubeconfig from CP into local file
       ansible.builtin.fetch:
