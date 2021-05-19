@@ -2,7 +2,7 @@
 ---
 - name: Creating prometheus user group
   group:
-    name: "{{groupId}}"
+    name: "{{ groupId }}"
   become: yes
   become_user: root
   become_method: sudo
@@ -12,11 +12,11 @@
   become_user: root
   become_method: sudo
   user:
-    name: "{{userId}}"
-    group: "{{groupId}}"
+    name: "{{ userId }}"
+    group: "{{ groupId }}"
     system: yes
     shell: "/sbin/nologin"
-    comment: "{{userId}} nologin User"
+    comment: "{{ userId }} nologin User"
     createhome: "no"
     state: present
 
@@ -33,8 +33,8 @@
   copy:
     src: "/tmp/prometheus-{{ prometheusVersion }}.linux-armv7/prometheus"
     dest: "/usr/local/bin/prometheus"
-    owner: "{{userId}}"
-    group: "{{groupId}}"
+    owner: "{{ userId }}"
+    group: "{{ groupId }}"
     remote_src: yes
     mode: 0755
 
@@ -50,8 +50,8 @@
   file:
     path: "/data/prometheus/"
     state: directory
-    owner: "{{userId}}"
-    group: "{{groupId}}"
+    owner: "{{ userId }}"
+    group: "{{ groupId }}"
     mode: 0755
 
 - name: Creates directory
@@ -61,8 +61,8 @@
   file:
     path: "/etc/prometheus/"
     state: directory
-    owner: "{{userId}}"
-    group: "{{groupId}}"
+    owner: "{{ userId }}"
+    group: "{{ groupId }}"
     mode: 0755
 
 - name: Display IP address
@@ -76,11 +76,13 @@
   template:
     src: prometheus.conf.j2
     dest: /etc/prometheus/prometheus.conf
+    mode: 0644
 
 - name: Copy systemd init file
   template:
     src: init.service.j2
     dest: /etc/systemd/system/prometheus.service
+    mode: 0644
   notify: systemd_reload
 
 - name: Start prometheus service
