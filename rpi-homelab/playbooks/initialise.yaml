@@ -7,7 +7,7 @@
   hosts: main
   tasks:
     - name: Run 'kubeadm init' on the control-plane node
-      ansible.builtin.command: kubeadm init --pod-network-cidr=192.168.27.0/24
+      ansible.builtin.command: kubeadm init
       register: kubeadm_init
       changed_when: false
       tags: [cp_only]
