@@ -107,6 +107,7 @@
 - name: Fold new kubeconfig into local
   # TODO: try slurping instead
   hosts: localhost
+  tags: [cp_only]
   tasks:
     - name: Set local kubeconfig filename fact, based on copy from remote
       ansible.builtin.set_fact:

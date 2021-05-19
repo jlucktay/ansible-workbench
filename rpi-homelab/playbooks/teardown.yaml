@@ -2,16 +2,21 @@
 # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#tear-down
 ---
 - name: Drain the worker nodes
-  hosts: localhost
+  become: true
+  gather_facts: no
+  hosts: main
   tasks:
     - name: Drain worker node
       ansible.builtin.command: >-
         kubectl drain {{ hostvars[item]['ansible_host'].split(".")[0] }}
         --delete-emptydir-data --force --ignore-daemonsets
       with_items: "{{ groups['workers'] }}"
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
 
 - name: Reset and clean up the worker nodes
   become: true
+  gather_facts: no
   hosts: workers
   tasks:
     - name: Run kubeadm reset
@@ -30,14 +35,19 @@
       ansible.builtin.shell: iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 
 - name: Delete the worker nodes
-  hosts: localhost
+  become: true
+  gather_facts: no
+  hosts: main
   tasks:
     - name: Delete worker node
       ansible.builtin.command: kubectl delete node {{ hostvars[item]['ansible_host'].split(".")[0] }}
       with_items: "{{ groups['workers'] }}"
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
 
 - name: Reset and clean up the control plane
   become: true
+  gather_facts: no
   hosts: main
   tags: [cp_only]
   tasks:
