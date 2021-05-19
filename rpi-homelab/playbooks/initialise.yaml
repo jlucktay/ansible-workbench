@@ -72,7 +72,8 @@
   tags: [cp_only]
   tasks:
     - name: De-taint control plane
-      ansible.builtin.command: kubectl taint nodes --all node-role.kubernetes.io/master-
+      ansible.builtin.command: >-
+        kubectl taint nodes {{ hostvars['main']['ansible_host'].split(".")[0] }} node-role.kubernetes.io/master-
       changed_when: false
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
