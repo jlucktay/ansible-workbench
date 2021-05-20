@@ -4,7 +4,7 @@
 ---
 - name: Update kube packages on nodes in the Kubernetes cluster
   become: true
-  hosts: raspberry_pi
+  hosts: all
   tasks:
     - name: Take kubeadm off hold
       ansible.builtin.dpkg_selections:
@@ -52,7 +52,7 @@
 - name: Pull images for imminent upgrade, one node at a time
   serial: 1
   become: true
-  hosts: raspberry_pi
+  hosts: all
   tasks:
     - name: Pull images for imminent upgrade
       ansible.builtin.command: kubeadm config images pull

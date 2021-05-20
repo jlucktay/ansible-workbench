@@ -11,12 +11,6 @@ all:
     worker-three:
       ansible_host: rpi2-3.local
   children:
-    raspberry_pi:
-      hosts:
-        controller-one: {}
-        worker-one: {}
-        worker-two: {}
-        worker-three: {}
     control_plane:
       hosts:
         controller-one: {}
