@@ -2,7 +2,7 @@
 ---
 all:
   hosts:
-    main:
+    controller-one:
       ansible_host: rpi8-1.local
     worker-one:
       ansible_host: rpi2-1.local
@@ -13,13 +13,13 @@ all:
   children:
     raspberry_pi:
       hosts:
-        main: {}
+        controller-one: {}
         worker-one: {}
         worker-two: {}
         worker-three: {}
-    monitoring_server:
+    control_plane:
       hosts:
-        main: {}
+        controller-one: {}
     workers:
       hosts:
         worker-one: {}

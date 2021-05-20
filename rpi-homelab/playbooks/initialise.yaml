@@ -4,7 +4,7 @@
 - name: Initialise the control-plane node
   become: true
   gather_facts: no
-  hosts: main
+  hosts: controller-one
   tasks:
     - name: Run 'kubeadm init' on the control-plane node
       ansible.builtin.command: kubeadm init
@@ -20,7 +20,7 @@
 - name: Install a Pod network add-on
   become: true
   gather_facts: no
-  hosts: main
+  hosts: controller-one
   tasks:
     - name: Get Calico manifest
       ansible.builtin.get_url:
@@ -63,16 +63,18 @@
   serial: 1
   tasks:
     - name: Run 'kubeadm join' on workers
-      ansible.builtin.command: "{{ hostvars['main']['kubeadm_join'][0] }}"
+      ansible.builtin.command: "{{ hostvars['controller-one']['kubeadm_join'][0] }}"
 
 - name: Post-init setup on control plane, and retrieve kubeconfig to local
   become: true
-  hosts: main
+  hosts: controller-one
   tags: [cp_only]
   tasks:
-    - name: De-taint control plane
+    - name: De-taint controller to allow scheduling
       ansible.builtin.command: >-
-        kubectl taint nodes {{ hostvars['main']['ansible_host'].split(".")[0] }} node-role.kubernetes.io/master-
+        kubectl taint nodes
+        {{ hostvars['controller-one']['ansible_host'].split(".")[0] }}
+        node-role.kubernetes.io/master-
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
@@ -80,7 +82,7 @@
       ansible.builtin.set_fact:
         kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
 
-    - name: Generate kubectl credential from main
+    - name: Generate kubectl credential
       ansible.builtin.shell: >-
         kubeadm alpha kubeconfig user
         --client-name=jltykmbp --config=
@@ -114,9 +116,9 @@
         kubeconfig_filename: "{{ path_components | join('/') }}"
       vars:
         path_components:
-          - "{{ hostvars['main']['kubeconfig_filename'] }}"
-          - "main"
-          - "{{ hostvars['main']['kubeconfig_filename'] }}"
+          - "{{ hostvars['controller-one']['kubeconfig_filename'] }}"
+          - "controller-one"
+          - "{{ hostvars['controller-one']['kubeconfig_filename'] }}"
 
     - name: Extract the data from the YAML file into a fact
       ansible.builtin.set_fact:
@@ -124,7 +126,7 @@
 
     - name: Clean up temporary kubeconfig file
       ansible.builtin.file:
-        path: "{{ hostvars['main']['kubeconfig_filename'] }}"
+        path: "{{ hostvars['controller-one']['kubeconfig_filename'] }}"
         state: absent
 
     - name: Update the fact
