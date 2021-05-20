@@ -2,23 +2,23 @@
 ---
 all:
   hosts:
-    controller-one:
+    controller_one:
       ansible_host: rpi8-1.local
-    worker-one:
+    worker_one:
       ansible_host: rpi2-1.local
-    worker-two:
+    worker_two:
       ansible_host: rpi2-2.local
-    worker-three:
+    worker_three:
       ansible_host: rpi2-3.local
   children:
     control_plane:
       hosts:
-        controller-one: {}
+        controller_one: {}
     workers:
       hosts:
-        worker-one: {}
-        worker-two: {}
-        worker-three: {}
+        worker_one: {}
+        worker_two: {}
+        worker_three: {}
 
   vars:
     ansible_python_interpreter: /usr/bin/python3

@@ -4,7 +4,7 @@
 - name: Drain the worker nodes
   become: true
   gather_facts: no
-  hosts: controller-one
+  hosts: controller_one
   tasks:
     - name: Drain worker node
       ansible.builtin.command: >-
@@ -37,7 +37,7 @@
 - name: Delete the worker nodes
   become: true
   gather_facts: no
-  hosts: controller-one
+  hosts: controller_one
   tasks:
     - name: Delete worker node
       ansible.builtin.command: kubectl delete node {{ hostvars[item]['ansible_host'].split(".")[0] }}
@@ -48,7 +48,7 @@
 - name: Reset and clean up the control plane
   become: true
   gather_facts: no
-  hosts: controller-one
+  hosts: controller_one
   tags: [cp_only]
   tasks:
     - name: Run kubeadm reset
