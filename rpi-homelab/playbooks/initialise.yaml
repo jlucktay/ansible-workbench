@@ -62,6 +62,14 @@
   hosts: workers
   serial: 1
   tasks:
+    - name: Create 'manifests' directory to cover log noise issue - https://github.com/kubernetes/kubeadm/issues/1345
+      ansible.builtin.file:
+        path: /etc/kubernetes/manifests
+        state: directory
+        mode: 0755
+        group: root
+        owner: root
+
     - name: Run 'kubeadm join' on workers
       ansible.builtin.command: "{{ hostvars['controller_one']['kubeadm_join'][0] }}"
 
