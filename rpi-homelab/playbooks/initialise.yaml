@@ -9,7 +9,6 @@
     - name: Run 'kubeadm init' on the control-plane node
       ansible.builtin.command: kubeadm init
       register: kubeadm_init
-      changed_when: false
       tags: [cp_only]
 
     - name: Run regexes and set 'kubeadm join' command as fact
@@ -74,7 +73,6 @@
     - name: De-taint control plane
       ansible.builtin.command: >-
         kubectl taint nodes {{ hostvars['main']['ansible_host'].split(".")[0] }} node-role.kubernetes.io/master-
-      changed_when: false
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
