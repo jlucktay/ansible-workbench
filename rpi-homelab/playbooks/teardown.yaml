@@ -28,8 +28,10 @@
         state: absent
       loop:
         - /etc/cni/net.d
+        - /etc/kubernetes
         - /home/pi/.kube
         - /root/.kube
+      tags: [clean]
 
     - name: Reset and clean up iptables rules
       ansible.builtin.shell: iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
@@ -56,8 +58,14 @@
 
     - name: Post-reset clean up
       ansible.builtin.file:
-        path: /etc/kubernetes
+        path: "{{ item }}"
         state: absent
+      loop:
+        - /etc/cni/net.d
+        - /etc/kubernetes
+        - /home/pi/.kube
+        - /root/.kube
+      tags: [clean]
 
 - name: Rolling reboot across all nodes
   gather_facts: no
