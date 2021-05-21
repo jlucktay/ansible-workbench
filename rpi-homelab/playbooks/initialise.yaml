@@ -1,7 +1,8 @@
 # initialise.yaml
-# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node
 ---
-- name: Initialise the control plane node
+- name: >-
+    Initialise the control plane node
+    (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node)
   become: true
   gather_facts: no
   hosts: controller_one
@@ -40,7 +41,10 @@
 
     # vvv - TODO: candidate for removal; keep an eye on the GH issue - vvv
 
-    - name: Patch to resolve iptables issue - https://github.com/projectcalico/calico/issues/4487
+    - name: >-
+        Patch to resolve iptables issue
+        (https://github.com/projectcalico/calico/issues/4487)
+        TODO: candidate for removal; keep an eye on the GH issue
       community.kubernetes.k8s:
         state: present
         resource_definition:
@@ -62,7 +66,9 @@
   hosts: workers
   serial: 1
   tasks:
-    - name: Create 'manifests' directory to cover log noise issue - https://github.com/kubernetes/kubeadm/issues/1345
+    - name: >-
+        Create 'manifests' directory to cover log noise issue
+        (https://github.com/kubernetes/kubeadm/issues/1345)
       ansible.builtin.file:
         path: /etc/kubernetes/manifests
         state: directory
@@ -164,8 +170,9 @@
       ansible.builtin.set_fact:
         merged_kubeconfig_file: "/tmp/kubeconfig.merged.{{ ansible_date_time.iso8601 }}.yaml"
 
-    # https://github.com/mikefarah/yq/issues/774#issuecomment-819929091
-    - name: Merge with my current kubeconfig
+    - name: >-
+        Merge with my current kubeconfig
+        (https://github.com/mikefarah/yq/issues/774#issuecomment-819929091)
       ansible.builtin.shell: >-
         yq eval-all '. as $item ireduce ({}; . *d $item )'
         "{{ ansible_env.HOME }}/.kube/config"
