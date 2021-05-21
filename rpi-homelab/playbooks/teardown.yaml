@@ -71,12 +71,14 @@
   gather_facts: no
   hosts: all
   serial: 1
+  tags: [reboot]
   tasks:
-    - name: Reboot
+    - name: "Reboot {{ ansible_play_batch }}"
       become: true
       ansible.builtin.reboot:
 
-    - name: Sleep for 10 seconds and continue with play
+    - name: "Sleep for 10s (if not last host) after rebooting {{ ansible_play_batch[0] }} then continue play"
       wait_for:
         timeout: 10
       delegate_to: localhost
+      when: ansible_play_batch[0] != ansible_play_hosts[-1]
