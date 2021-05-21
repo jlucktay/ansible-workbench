@@ -92,6 +92,47 @@
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
+    - name: Install metrics server
+      ansible.builtin.command: >-
+        kubectl apply -f
+        https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
+    - name: Gather info on metrics server deployment, to extract arguments list
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        name: metrics-server
+        namespace: kube-system
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      register: metrics_server_deployment
+
+    - name: Set the metrics server deployment args list into a new fact, and append one more arg
+      ansible.builtin.set_fact:
+        updated_msd_args: "{{ arg_list | default([]) }} + [ '--kubelet-insecure-tls' ]"
+      vars:
+        arg_list: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].args }}"
+
+    - name: Patch arguments on metrics server deployment spec template
+      community.kubernetes.k8s:
+        state: present
+        api_version: apps/v1
+        kind: Deployment
+        name: metrics-server
+        namespace: kube-system
+        resource_definition:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].name }}"
+                    image: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].image }}"
+                    args: "{{ updated_msd_args }}"
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+
     - name: Set temporary kubeconfig filename as fact
       ansible.builtin.set_fact:
         kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
