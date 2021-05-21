@@ -33,7 +33,7 @@
         name: openshift
 
     - name: Apply Calico manifest to the cluster
-      community.kubernetes.k8s:
+      kubernetes.core.k8s:
         src: /tmp/calico.yaml
         state: present
       environment:
@@ -45,7 +45,7 @@
         Patch to resolve iptables issue
         (https://github.com/projectcalico/calico/issues/4487)
         TODO: candidate for removal; keep an eye on the GH issue
-      community.kubernetes.k8s:
+      kubernetes.core.k8s:
         state: present
         resource_definition:
           apiVersion: crd.projectcalico.org/v1
@@ -116,7 +116,7 @@
         arg_list: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].args }}"
 
     - name: Patch arguments on metrics server deployment spec template
-      community.kubernetes.k8s:
+      kubernetes.core.k8s:
         state: present
         api_version: apps/v1
         kind: Deployment
