@@ -24,6 +24,7 @@ the executing machine (probably `localhost`) in order to merge the new kubeconfi
 
 - accommodate multiple CP nodes for HA
 - refactor and reduce/boil down
+  - make use of Ansible variables, instead of temporary files
 - install the metric server as part of the initialise play
   - patch the `--kubelet-insecure-tls` arg into place
     ([ref](https://github.com/kubernetes-sigs/metrics-server/issues/131#issuecomment-516505683))
