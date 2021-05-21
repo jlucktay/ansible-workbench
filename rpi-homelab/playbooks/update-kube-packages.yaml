@@ -1,8 +1,18 @@
 # update-kube-packages.yaml
-# Prepare to upgrade nodes in the Kubernetes cluster
-# https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#installing-kubeadm-on-your-hosts
 ---
-- name: Update kube packages on all nodes in the cluster
+- name: >-
+    Check GitHub releases for the latest non-prerelease patch of the second-highest minor version
+    (https://github.com/kubernetes/kubernetes/releases)
+  gather_facts: no
+  hosts: localhost
+  tasks:
+    - name: Parse target release from GitHub API with helper script
+      ansible.builtin.command: "{{ playbook_dir }}/../k8s-releases.sh"
+      register: k8s_release
+
+- name: >-
+    Update kube packages on all nodes in the cluster
+    https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#installing-kubeadm-on-your-hosts
   become: true
   gather_facts: no
   hosts: all
@@ -16,18 +26,16 @@
         - kubectl
         - kubelet
 
-    # 2021-05-20:
-    # https://github.com/kubernetes/kubernetes/releases/latest
-    # $ sudo apt update && apt-cache madison kubeadm | head
-    # NOTE: we target the second-highest minor version
-    - name: Upgrade packages to v1.20.7
+    - name: "Upgrade packages to v{{ k8s_release }}"
       ansible.builtin.apt:
         name:
-          - kubeadm=1.20.7-00
-          - kubectl=1.20.7-00
-          - kubelet=1.20.7-00
+          - "kubeadm={{ k8s_release }}-00"
+          - "kubectl={{ k8s_release }}-00"
+          - "kubelet={{ k8s_release }}-00"
         state: present
         update_cache: true
+      vars:
+        k8s_release: "{{ hostvars.localhost.k8s_release.stdout }}"
 
     - name: Put packages back on hold
       ansible.builtin.dpkg_selections:
