@@ -1,0 +1,62 @@
+# provision.yaml
+---
+- name: >-
+    Provision the Raspberry Pi SD card(s) for a headless fresh install
+    (https://www.raspberrypi.org/documentation/configuration/wireless/headless.md)
+  gather_facts: no
+  hosts: localhost
+  tasks:
+    - name: Register output from helper script
+      ansible.builtin.command:
+        cmd: "{{ playbook_dir }}/../raspios64-release.sh"
+      register: raspios64_release
+      changed_when: raspios64_release.rc == 0
+
+    - name: Stat local image
+      ansible.builtin.stat:
+        path: "{{ raspios64_release.stdout_lines[0] }}"
+      register: stat_image
+
+    - name: >-
+        Get helper script to (resume) download, if we don't have the full image locally
+        (https://github.com/ansible/ansible/issues/23182)
+      ansible.builtin.command:
+        cmd: >-
+          "{{ playbook_dir }}/../raspios64-release.sh"
+          --download
+      when: stat_image.stat.size < raspios64_release.stdout_lines[1] | int
+
+    - name: Stat mount point
+      ansible.builtin.stat:
+        path: /Volumes/boot
+      register: stat_mount
+
+    - name: End play if mount point does not exist
+      ansible.builtin.meta: end_play
+      when: not stat_mount.stat.exists
+
+    # TODO: run 'rpi-imager' from CLI here
+    # https://github.com/raspberrypi/rpi-imager
+    #
+    # $ "/Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager" --help
+    # /Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager [--debug] [--version] [--repo <repository URL>] [--qm <custom qm translation file>] [--disable-telemetry] [<image file to write>]
+    # -OR- /Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager --cli [--disable-verify] [--sha256 <expected hash>] [--debug] [--quiet] <image file to write> <destination drive device>
+
+    - name: Enable SSH daemon
+      ansible.builtin.copy:
+        content: ""
+        dest: /Volumes/boot/ssh
+        force: no
+        mode: 0664
+
+    - name: Set up wireless LAN info via the '/boot' partition
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../wpa_supplicant.conf"
+        dest: "/Volumes/boot/wpa_supplicant.conf"
+        mode: 0664
+
+    - name: Eject SD card
+      ansible.builtin.command:
+        cmd: diskutil eject /Volumes/boot
+      register: eject
+      changed_when: eject.rc == 0

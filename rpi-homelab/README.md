@@ -15,6 +15,12 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
 
 ### Flow
 
+1. [Provision](playbooks/provision.yaml): `ansible-playbook playbooks/provision.yaml`
+    - images an SD card for a fresh headless install
+    - run once per SD card, moving each one in and out of the card reader between runs
+    - TODO: the `wpa_supplicant.conf` file needs to be templated out, and the WiFi password put in a vault
+      - see [here](https://www.digitalocean.com/community/cheatsheets/how-to-use-ansible-cheat-sheet-guide)
+        under the *Using Ansible Vault to Store Sensitive Data* section
 1. [Update](playbooks/update-kube-packages.yaml): `ansible-playbook playbooks/update-kube-packages.yaml`
 1. [Initialise](playbooks/initialise.yaml): `ansible-playbook playbooks/initialise.yaml`
     - alternately, for a single-node/CP-only "cluster": `ansible-playbook --tags cp_only playbooks/initialise.yaml`
