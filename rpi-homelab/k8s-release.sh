@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-### k8s-releases.sh looks at the most recent 100 releases from the kubernetes/kubernetes GitHub repo, and outputs the
+### k8s-release.sh looks at the most recent 100 releases from the kubernetes/kubernetes GitHub repo, and outputs the
 ### semver of the latest non-prerelease patch for the second-highest minor version, hard-coded to major version 1.
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[-1]}")" &> /dev/null && pwd)"
