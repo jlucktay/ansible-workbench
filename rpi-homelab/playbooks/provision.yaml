@@ -8,7 +8,7 @@
   tasks:
     - name: Register output from helper script
       ansible.builtin.command:
-        cmd: "{{ playbook_dir }}/../raspios64-release.sh"
+        cmd: "{{ playbook_dir }}/../scripts/raspios64-release.sh"
       register: raspios64_release
       changed_when: raspios64_release.rc == 0
 
@@ -22,7 +22,7 @@
         (https://github.com/ansible/ansible/issues/23182)
       ansible.builtin.command:
         cmd: >-
-          "{{ playbook_dir }}/../raspios64-release.sh"
+          "{{ playbook_dir }}/../scripts/raspios64-release.sh"
           --download
       when: stat_image.stat.size < raspios64_release.stdout_lines[1] | int
 

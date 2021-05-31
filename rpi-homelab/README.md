@@ -4,7 +4,7 @@ Ansible playbooks to update, initialise, and teardown a K8s cluster with exactly
 worker nodes.
 
 The Kubernetes version used will be the latest non-prerelease patch of the second-highest minor version, according to
-the GitHub repository. See the [k8s-release](./k8s-release.sh) script for more details.
+the GitHub repository. See the [k8s-release](./scripts/k8s-release.sh) script for more details.
 
 ## Usage
 

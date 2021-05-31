@@ -7,7 +7,7 @@
   hosts: localhost
   tasks:
     - name: Parse target release from GitHub API with helper script
-      ansible.builtin.command: "{{ playbook_dir }}/../k8s-release.sh"
+      ansible.builtin.command: "{{ playbook_dir }}/../scripts/k8s-release.sh"
       register: k8s_release
 
 - name: >-
