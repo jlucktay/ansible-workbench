@@ -70,3 +70,4 @@
       with_items: "{{ groups['workers'] }}"
       tags:
         - any
+        - combo

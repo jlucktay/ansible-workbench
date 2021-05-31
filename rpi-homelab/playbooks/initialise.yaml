@@ -11,6 +11,7 @@
       ansible.builtin.command: kubeadm init
       register: kubeadm_init
       tags: [cp_only]
+      changed_when: false
 
     - name: Run regexes and set 'kubeadm join' command as fact
       ansible.builtin.set_fact:
@@ -78,6 +79,7 @@
 
     - name: Run 'kubeadm join' on workers
       ansible.builtin.command: "{{ hostvars['controller_one']['kubeadm_join'][0] }}"
+      changed_when: false
 
 - name: Post-init setup on control plane, and retrieve kubeconfig to local
   become: true
@@ -91,6 +93,7 @@
         node-role.kubernetes.io/master-
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
 
     - name: Install metrics server
       ansible.builtin.command: >-
@@ -98,6 +101,7 @@
         https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
 
     - name: Gather info on metrics server deployment, to extract arguments list
       kubernetes.core.k8s_info:
@@ -143,6 +147,7 @@
         --client-name=jltykmbp --config=
         >>
         "{{ kubeconfig_filename }}"
+      changed_when: false
 
     - name: Bind cluster admin role to my user
       ansible.builtin.command: >-
@@ -150,6 +155,7 @@
         --clusterrole=cluster-admin --user=jltykmbp
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
 
     - name: Fetch kubeconfig from CP into local file
       ansible.builtin.fetch:
@@ -220,6 +226,7 @@
         "{{ updated_kubeconfig_file }}"
         >>
         "{{ merged_kubeconfig_file }}"
+      changed_when: false
 
     - name: Clean up temporary merged kubeconfig file
       ansible.builtin.file:
@@ -231,12 +238,14 @@
         mv
         {{ ansible_env.HOME }}/.kube/config
         {{ ansible_env.HOME }}/.kube/config.{{ ansible_date_time.iso8601 }}
+      changed_when: false
 
     - name: Move updated/merged kubeconfig into place
       ansible.builtin.command: >-
         mv
         {{ merged_kubeconfig_file }}
         {{ ansible_env.HOME }}/.kube/config
+      changed_when: false
 
     - name: Set mode on kubeconfig
       ansible.builtin.file:

@@ -9,6 +9,7 @@
     - name: Parse target release from GitHub API with helper script
       ansible.builtin.command: "{{ playbook_dir }}/../scripts/k8s-release.sh"
       register: k8s_release
+      changed_when: false
 
 - name: >-
     Update kube packages on all nodes in the cluster

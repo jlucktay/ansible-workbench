@@ -13,6 +13,7 @@
       with_items: "{{ groups['workers'] }}"
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
 
 - name: Reset and clean up the worker nodes
   become: true
@@ -21,6 +22,7 @@
   tasks:
     - name: Run kubeadm reset
       ansible.builtin.command: kubeadm reset --force
+      changed_when: false
 
     - name: Post-reset clean up
       ansible.builtin.file:
@@ -35,6 +37,7 @@
 
     - name: Reset and clean up iptables rules
       ansible.builtin.shell: iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+      changed_when: false
 
 - name: Delete the worker nodes
   become: true
@@ -46,6 +49,7 @@
       with_items: "{{ groups['workers'] }}"
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
+      changed_when: false
 
 - name: Reset and clean up the control plane
   become: true
@@ -54,7 +58,8 @@
   tags: [cp_only]
   tasks:
     - name: Run kubeadm reset
-      ansible.builtin.shell: kubeadm reset --force
+      ansible.builtin.command: kubeadm reset --force
+      changed_when: false
 
     - name: Post-reset clean up
       ansible.builtin.file:
