@@ -3,13 +3,17 @@
 all:
   hosts:
     controller_one:
-      ansible_host: rpi8-1.local
+      ansible_host: 192.168.86.181
+      pi_name: rpi8-1
     worker_one:
-      ansible_host: rpi2-1.local
+      ansible_host: 192.168.86.121
+      pi_name: rpi2-1
     worker_two:
-      ansible_host: rpi2-2.local
+      ansible_host: 192.168.86.122
+      pi_name: rpi2-2
     worker_three:
-      ansible_host: rpi2-3.local
+      ansible_host: 192.168.86.123
+      pi_name: rpi2-3
   children:
     control_plane:
       hosts:

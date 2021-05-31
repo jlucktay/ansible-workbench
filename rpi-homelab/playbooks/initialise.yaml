@@ -87,7 +87,7 @@
     - name: De-taint controller to allow scheduling
       ansible.builtin.command: >-
         kubectl taint nodes
-        {{ hostvars['controller_one']['ansible_host'].split(".")[0] }}
+        {{ pi_name }}
         node-role.kubernetes.io/master-
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf

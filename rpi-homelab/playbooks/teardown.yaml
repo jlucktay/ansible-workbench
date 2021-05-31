@@ -8,7 +8,7 @@
   tasks:
     - name: Drain worker node
       ansible.builtin.command: >-
-        kubectl drain {{ hostvars[item]['ansible_host'].split(".")[0] }}
+        kubectl drain {{ hostvars[item]['pi_name'] }}
         --delete-emptydir-data --force --ignore-daemonsets
       with_items: "{{ groups['workers'] }}"
       environment:
@@ -42,7 +42,7 @@
   hosts: controller_one
   tasks:
     - name: Delete worker node
-      ansible.builtin.command: kubectl delete node {{ hostvars[item]['ansible_host'].split(".")[0] }}
+      ansible.builtin.command: kubectl delete node {{ hostvars[item]['pi_name'] }}
       with_items: "{{ groups['workers'] }}"
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
