@@ -56,41 +56,41 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
       - if the host has the `hc_ping` variable defined, adds a health check cron job with <https://healthchecks.io>
         where this `hc_ping` variable should be set to the UUID of a check
 
-1. [Update](playbooks/update-kube-packages.yaml)
+1. [Update Kubernetes packages](playbooks/update-kube-packages.yaml)
 
     ```shell
     ansible-playbook playbooks/update-kube-packages.yaml
     ```
 
-1. [Initialise](playbooks/initialise.yaml)
+1. [Initialise cluster](playbooks/initialise-cluster.yaml)
 
     ```shell
-    ansible-playbook playbooks/initialise.yaml
+    ansible-playbook playbooks/initialise-cluster.yaml
     ```
 
     - alternately, for a single-node/CP-only "cluster"
 
         ```shell
-        ansible-playbook --tags cp_only playbooks/initialise.yaml
+        ansible-playbook --tags cp_only playbooks/initialise-cluster.yaml
         ```
 
-1. [Teardown](playbooks/teardown.yaml)
+1. [Teardown cluster](playbooks/teardown-cluster.yaml)
 
     ```shell
-    ansible-playbook playbooks/teardown.yaml
+    ansible-playbook playbooks/teardown-cluster.yaml
     ```
 
     - alternately, for a single-node/CP-only "cluster"
 
         ```shell
-        ansible-playbook --tags cp_only playbooks/teardown.yaml
+        ansible-playbook --tags cp_only playbooks/teardown-cluster.yaml
         ```
 
 ## Requirements
 
-The [initialise](playbooks/initialise.yaml) playbook requires the use of [`yq` v4+](https://github.com/mikefarah/yq) on
-the executing machine (probably `localhost`) in order to merge the newly-generated kubeconfig file into your existing
-one.
+The [initialise cluster](playbooks/initialise-cluster.yaml) playbook requires the use of
+[`yq` v4+](https://github.com/mikefarah/yq) on the executing machine (probably `localhost`) in order to merge the
+newly-generated kubeconfig file into your existing one.
 
 ## TODOs
 
