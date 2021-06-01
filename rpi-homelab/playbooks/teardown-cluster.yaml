@@ -1,4 +1,4 @@
-# teardown.yaml
+# teardown-cluster.yaml
 # https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#tear-down
 ---
 - name: Drain the worker nodes

@@ -1,4 +1,4 @@
-# initialise.yaml
+# initialise-cluster.yaml
 ---
 - name: >-
     Initialise the control plane node
