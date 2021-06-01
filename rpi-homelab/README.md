@@ -1,10 +1,11 @@
 # Raspberry Pi Homelab
 
-Ansible playbooks to provision, bootstrap, update, initialise, and teardown a K8s cluster with exactly one control
-plane, and zero to many worker nodes.
+Ansible playbooks to provision, bootstrap, and update some Rasperry Pi hosts(s), and then initialise (and teardown, and
+initialise, and ...) a K8s cluster with exactly one control plane, and zero to many worker nodes.
 
 The Kubernetes version used will be the latest non-prerelease patch of the second-highest minor version, according to
-the GitHub repository. See the [k8s-release](./scripts/k8s-release.sh) script for more details.
+the GitHub repository.
+See the [k8s-release](./scripts/k8s-release.sh) script for more details.
 
 ## Usage
 
@@ -87,6 +88,11 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
         ```
 
 ## Requirements
+
+The [deploy public key](playbooks/deploy-public-key.yaml) playbook requires the use of `sshpass`
+([man page](https://linux.die.net/man/1/sshpass) and
+[macOS Homebrew formula](https://github.com/nunnun/homebrew-sshpass/compare)) on the executing machine (probably
+`localhost`) in order to SSH into each remote host once using a password.
 
 The [initialise cluster](playbooks/initialise-cluster.yaml) playbook requires the use of
 [`yq` v4+](https://github.com/mikefarah/yq) on the executing machine (probably `localhost`) in order to merge the
