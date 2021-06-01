@@ -40,6 +40,22 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
       inventory
       - TODO: currently hard-coded to `$HOME/.ssh/id_rsa_rpi.pub`
 
+1. [Bootstrap](playbooks/bootstrap.yaml)
+
+    ```shell
+    ansible-playbook playbooks/bootstrap.yaml
+    ```
+
+    - runs through some (re)configuration tasks:
+      - Linux system level
+        - timezone
+        - hostname
+        - etc etc
+      - the Avahi daemon
+        - publish host details with mDNS to enable discovery
+      - if the host has the `hc_ping` variable defined, adds a health check cron job with <https://healthchecks.io>
+        where this `hc_ping` variable should be set to the UUID of a check
+
 1. [Update](playbooks/update-kube-packages.yaml)
 
     ```shell

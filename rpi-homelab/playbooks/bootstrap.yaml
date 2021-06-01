@@ -1,0 +1,145 @@
+# bootstrap.yaml
+---
+- name: Bootstrapping
+  become: true
+  gather_facts: no
+  hosts: all
+  tasks:
+    - name: Set timezone to UTC
+      ansible.builtin.command: timedatectl set-timezone UTC
+      register: set_timezone
+      changed_when: set_timezone.rc == 0
+
+    - name: Update some packages to latest
+      ansible.builtin.apt:
+        name:
+          - avahi-daemon
+          - raspi-config
+        state: present
+        install_recommends: no
+        update_cache: true
+
+    - name: Make sure FS has expanded to use whole SD card
+      ansible.builtin.command: raspi-config nonint do_expand_rootfs
+      register: expand_fs
+      changed_when: expand_fs.rc == 0
+
+    - name: Reduce GPU memory to minimum (16MB)
+      ansible.builtin.command: raspi-config nonint do_memory_split 16
+      register: reduce_gpu_memory
+      changed_when: reduce_gpu_memory.rc == 0
+
+    - name: Set hostname
+      ansible.builtin.command: "raspi-config nonint do_hostname {{ pi_name }}"
+      register: set_hostname
+      changed_when: set_hostname.rc == 0
+
+    - name: Disable audio
+      ansible.builtin.lineinfile:
+        path: /boot/config.txt
+        regexp: "^dtparam=audio=on$"
+        line: dtparam=audio=off
+
+    - name: Disable Bluetooth
+      ansible.builtin.lineinfile:
+        path: /boot/config.txt
+        line: dtoverlay=disable-bt
+
+    - name: Reboot
+      ansible.builtin.reboot:
+
+    - name: Configure Avahi
+      community.general.ini_file:
+        path: /etc/avahi/avahi-daemon.conf
+        section: "{{ item.section }}"
+        option: "{{ item.option }}"
+        value: "{{ item.value }}"
+        no_extra_spaces: yes
+        mode: 0644
+      notify:
+        - Restart Avahi daemon
+      with_items: "{{ avahi_settings }}"
+      vars:
+        avahi_settings:
+          #
+          ## Section [server]
+          #
+          - section: server
+            option: host-name
+            value: "{{ pi_name }}"
+          - section: server
+            option: domain-name
+            value: local
+          - section: server
+            option: use-ipv4
+            value: "yes"
+          - section: server
+            option: use-ipv6
+            value: "no"
+          - section: server
+            option: allow-interfaces
+            value: wlan0
+          - section: server
+            option: deny-interfaces
+            value: eth0
+          - section: server
+            option: disallow-other-stacks
+            value: "yes"
+
+          #
+          ## Section [publish]
+          #
+          - section: publish
+            option: disable-publishing
+            value: "no"
+          - section: publish
+            option: publish-addresses
+            value: "yes"
+          - section: publish
+            option: publish-hinfo
+            value: "yes"
+          - section: publish
+            option: publish-workstation
+            value: "yes"
+
+    - name: Put some settings into crontab
+      ansible.builtin.cron:
+        env: yes
+        name: "{{ item.name }}"
+        job: "{{ item.job }}"
+        cron_file: /etc/crontab
+        user: root
+      with_items: "{{ cron_settings }}"
+      vars:
+        cron_settings:
+          - name: MAILTO
+            job: ""
+          - name: PATH
+            job: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: SHELL
+            job: /bin/bash
+
+    - name: If the host has the 'hc_ping' var defined, set up a cron job to ping https://healthchecks.io
+      ansible.builtin.cron:
+        name: Health check ping
+        minute: "*/15"
+        job: >-
+          curl
+          --fail
+          --max-time 10
+          --retry 5
+          --show-error
+          --silent
+          "https://hc-ping.com/{{ hc_ping }}"
+          |&
+          logger -t healthcheck
+        cron_file: /etc/crontab
+        user: root
+      when: hc_ping is defined
+
+  handlers:
+    - name: Restart Avahi daemon
+      ansible.builtin.systemd:
+        name: avahi-daemon
+        daemon_reload: yes
+        state: restarted
