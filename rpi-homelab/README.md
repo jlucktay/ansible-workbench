@@ -47,15 +47,17 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
     ansible-playbook playbooks/bootstrap.yaml
     ```
 
-    - runs through some (re)configuration tasks:
+    - runs through some one-time (re)configuration tasks:
       - Linux system level
         - timezone
         - hostname
+        - let `iptables` see bridged traffic
         - etc etc
       - the Avahi daemon
         - publish host details with mDNS to enable discovery
       - if the host has the `hc_ping` variable defined, adds a health check cron job with <https://healthchecks.io>
         where this `hc_ping` variable should be set to the UUID of a check
+      - add the Kubernetes `apt` repository and associated public signing key
 
 1. [Update Kubernetes packages](playbooks/update-kube-packages.yaml)
 

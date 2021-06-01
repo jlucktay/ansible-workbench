@@ -13,7 +13,10 @@
     - name: Update some packages to latest
       ansible.builtin.apt:
         name:
+          - apt-transport-https
           - avahi-daemon
+          - ca-certificates
+          - curl
           - raspi-config
         state: present
         install_recommends: no
@@ -44,6 +47,36 @@
       ansible.builtin.lineinfile:
         path: /boot/config.txt
         line: dtoverlay=disable-bt
+
+    - name: >-
+        Letting iptables see bridged traffic
+        (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#letting-iptables-see-bridged-traffic)
+        make sure that the 'br_netfilter' module is loaded
+      ansible.builtin.command: modprobe br_netfilter
+      register: load_module
+      changed_when: load_module.rc == 0
+
+    - name: Make sure that the 'br_netfilter' module is loaded redux
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/modules-load.d/k8s.conf
+        line: br_netfilter
+
+    - name: Letting iptables see bridged traffic redux
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/sysctl.d/k8s.conf
+        line: net.bridge.bridge-nf-call-{{ item }} = 1
+      loop:
+        - ip6tables
+        - iptables
+
+    - name: (Re)read values from all system directories
+      ansible.builtin.command: sysctl --system
+      register: sysctl_system
+      changed_when: sysctl_system.rc == 0
 
     - name: Reboot
       ansible.builtin.reboot:
@@ -136,6 +169,20 @@
         cron_file: /etc/crontab
         user: root
       when: hc_ping is defined
+
+    - name: Get Google Cloud public signing key
+      ansible.builtin.get_url:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+        dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+    - name: Add the Kubernetes apt repository
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/apt/sources.list.d/kubernetes.list
+        line: >-
+          deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg]
+          https://apt.kubernetes.io/ kubernetes-xenial main
 
   handlers:
     - name: Restart Avahi daemon
