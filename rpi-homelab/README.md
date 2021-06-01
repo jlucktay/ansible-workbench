@@ -21,6 +21,20 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
     - TODO: the `wpa_supplicant.conf` file needs to be templated out, and the WiFi password put in a vault
       - see [here](https://www.digitalocean.com/community/cheatsheets/how-to-use-ansible-cheat-sheet-guide)
         under the *Using Ansible Vault to Store Sensitive Data* section
+
+1. [Deploy public key](playbooks/deploy-public-key.yaml)
+
+    - **NOTE:** this playbook requires the `ANSIBLE_HOST_KEY_CHECKING` environment variable and the `--ask-pass` flag
+      when executed
+
+    ```shell
+    ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook --ask-pass playbooks/deploy-public-key.yaml
+    ```
+
+    - puts the public key from the local `.ssh/` directory into the remote `authorized_keys` file on each host in
+      inventory
+      - TODO: currently hard-coded to `$HOME/.ssh/id_rsa_rpi.pub`
+
 1. [Update](playbooks/update-kube-packages.yaml): `ansible-playbook playbooks/update-kube-packages.yaml`
 1. [Initialise](playbooks/initialise.yaml): `ansible-playbook playbooks/initialise.yaml`
     - alternately, for a single-node/CP-only "cluster": `ansible-playbook --tags cp_only playbooks/initialise.yaml`
