@@ -1,7 +1,7 @@
 # Raspberry Pi Homelab
 
-Ansible playbooks to update, initialise, and teardown a K8s cluster with exactly one control plane, and zero to many
-worker nodes.
+Ansible playbooks to provision, bootstrap, update, initialise, and teardown a K8s cluster with exactly one control
+plane, and zero to many worker nodes.
 
 The Kubernetes version used will be the latest non-prerelease patch of the second-highest minor version, according to
 the GitHub repository. See the [k8s-release](./scripts/k8s-release.sh) script for more details.
@@ -15,7 +15,12 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
 
 ### Flow
 
-1. [Provision](playbooks/provision.yaml): `ansible-playbook playbooks/provision.yaml`
+1. [Provision](playbooks/provision.yaml)
+
+    ```shell
+    ansible-playbook playbooks/provision.yaml
+    ```
+
     - images an SD card for a fresh headless install
     - run once per SD card, moving each one in and out of the card reader between runs
     - TODO: the `wpa_supplicant.conf` file needs to be templated out, and the WiFi password put in a vault
@@ -35,22 +40,48 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
       inventory
       - TODO: currently hard-coded to `$HOME/.ssh/id_rsa_rpi.pub`
 
-1. [Update](playbooks/update-kube-packages.yaml): `ansible-playbook playbooks/update-kube-packages.yaml`
-1. [Initialise](playbooks/initialise.yaml): `ansible-playbook playbooks/initialise.yaml`
-    - alternately, for a single-node/CP-only "cluster": `ansible-playbook --tags cp_only playbooks/initialise.yaml`
-1. [Teardown](playbooks/teardown.yaml): `ansible-playbook playbooks/teardown.yaml`
-    - alternately, for a single-node/CP-only "cluster": `ansible-playbook --tags cp_only playbooks/teardown.yaml`
+1. [Update](playbooks/update-kube-packages.yaml)
+
+    ```shell
+    ansible-playbook playbooks/update-kube-packages.yaml
+    ```
+
+1. [Initialise](playbooks/initialise.yaml)
+
+    ```shell
+    ansible-playbook playbooks/initialise.yaml
+    ```
+
+    - alternately, for a single-node/CP-only "cluster"
+
+        ```shell
+        ansible-playbook --tags cp_only playbooks/initialise.yaml
+        ```
+
+1. [Teardown](playbooks/teardown.yaml)
+
+    ```shell
+    ansible-playbook playbooks/teardown.yaml
+    ```
+
+    - alternately, for a single-node/CP-only "cluster"
+
+        ```shell
+        ansible-playbook --tags cp_only playbooks/teardown.yaml
+        ```
 
 ## Requirements
 
 The [initialise](playbooks/initialise.yaml) playbook requires the use of [`yq` v4+](https://github.com/mikefarah/yq) on
-the executing machine (probably `localhost`) in order to merge the new kubeconfig file into your existing one.
+the executing machine (probably `localhost`) in order to merge the newly-generated kubeconfig file into your existing
+one.
 
 ## TODOs
 
 - accommodate multiple CP nodes for HA
 - refactor and reduce/boil down
   - make use of Ansible variables, instead of temporary files
+  - use roles structure: <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>
 - ~~install the metric server as part of the initialise play~~
   - ~~patch the `--kubelet-insecure-tls` arg into place~~
     ~~([ref](https://github.com/kubernetes-sigs/metrics-server/issues/131#issuecomment-516505683))~~
