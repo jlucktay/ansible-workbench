@@ -10,6 +10,19 @@
       register: set_timezone
       changed_when: set_timezone.rc == 0
 
+    - name: Slurp kernel command line
+      ansible.builtin.slurp:
+        src: /boot/cmdline.txt
+      register: boot_cmdline
+
+    - name: Enable memory cgroup in kernel command line
+      ansible.builtin.copy:
+        content: |
+          cgroup_enable=memory cgroup_memory=1 {{ boot_cmdline.content | b64decode | trim }}
+        dest: /boot/cmdline.txt
+        mode: 0755
+      when: '"cgroup_enable=memory cgroup_memory=1" not in boot_cmdline.content | b64decode | trim'
+
     - name: Update some packages to latest
       ansible.builtin.apt:
         name:
