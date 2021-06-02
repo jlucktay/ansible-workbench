@@ -31,7 +31,7 @@
       loop:
         - /etc/cni/net.d
         - /etc/kubernetes
-        - /home/pi/.kube
+        - /home/{{ ansible_user }}/.kube
         - /root/.kube
       tags: [clean]
 
@@ -51,10 +51,10 @@
         KUBECONFIG: /etc/kubernetes/admin.conf
       changed_when: false
 
-- name: Reset and clean up the control plane
+- name: Reset and clean up the control plane(s)
   become: true
   gather_facts: no
-  hosts: controller_one
+  hosts: control_plane
   tags: [cp_only]
   tasks:
     - name: Run kubeadm reset
@@ -68,7 +68,7 @@
       loop:
         - /etc/cni/net.d
         - /etc/kubernetes
-        - /home/pi/.kube
+        - /home/{{ ansible_user }}/.kube
         - /root/.kube
       tags: [clean]
 
