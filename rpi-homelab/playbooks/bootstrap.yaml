@@ -44,6 +44,18 @@
       register: set_hostname
       changed_when: set_hostname.rc == 0
 
+    - name: Disable swap permanently
+      ansible.builtin.shell: >-
+        set -o pipefail
+        && dphys-swapfile swapoff
+        && dphys-swapfile uninstall
+        && systemctl disable dphys-swapfile
+      register: disable_swap
+      changed_when: disable_swap.rc == 0
+      args:
+        executable: /bin/bash
+        removes: /var/swap
+
     - name: Disable audio
       ansible.builtin.lineinfile:
         path: /boot/config.txt
