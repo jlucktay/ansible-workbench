@@ -17,15 +17,22 @@
           - avahi-daemon
           - ca-certificates
           - curl
+          - gnupg
+          - lsb-release
           - raspi-config
         state: present
         install_recommends: no
         update_cache: true
 
-    - name: Make sure FS has expanded to use whole SD card
+    - name: Don't autologin at boot
+      ansible.builtin.command: raspi-config nonint do_boot_behaviour B1
+      register: disable_autologin
+      changed_when: disable_autologin.rc == 0
+
+    - name: Make sure filesystem has expanded to use whole SD card
       ansible.builtin.command: raspi-config nonint do_expand_rootfs
-      register: expand_fs
-      changed_when: expand_fs.rc == 0
+      register: expand_filesystem
+      changed_when: expand_filesystem.rc == 0
 
     - name: Reduce GPU memory to minimum (16MB)
       ansible.builtin.command: raspi-config nonint do_memory_split 16
@@ -49,34 +56,92 @@
         line: dtoverlay=disable-bt
 
     - name: >-
-        Letting iptables see bridged traffic
+        Let iptables see bridged traffic
         (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#letting-iptables-see-bridged-traffic)
-        make sure that the 'br_netfilter' module is loaded
-      ansible.builtin.command: modprobe br_netfilter
+        (https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
+        make sure that the modules necessary for Kubernetes and containerd are loaded
+      ansible.builtin.command: "modprobe {{ item }}"
       register: load_module
       changed_when: load_module.rc == 0
-
-    - name: Make sure that the 'br_netfilter' module is loaded redux
-      ansible.builtin.lineinfile:
-        create: yes
-        mode: 0644
-        path: /etc/modules-load.d/k8s.conf
-        line: br_netfilter
-
-    - name: Letting iptables see bridged traffic redux
-      ansible.builtin.lineinfile:
-        create: yes
-        mode: 0644
-        path: /etc/sysctl.d/k8s.conf
-        line: net.bridge.bridge-nf-call-{{ item }} = 1
       loop:
-        - ip6tables
-        - iptables
+        - br_netfilter
+        - overlay
 
-    - name: (Re)read values from all system directories
+    - name: Make sure that the modules necessary for Kubernetes and containerd are loaded redux
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/modules-load.d/kubernetes-cri.conf
+        line: "{{ item }}"
+      loop:
+        - br_netfilter
+        - overlay
+
+    - name: Let iptables see bridged traffic redux, and containerd prerequisites
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/sysctl.d/99-kubernetes-cri.conf
+        line: net.{{ item }} = 1
+      loop:
+        - bridge.bridge-nf-call-ip6tables
+        - bridge.bridge-nf-call-iptables
+        - ipv4.ip_forward
+
+    - name: Apply sysctl params without reboot
       ansible.builtin.command: sysctl --system
       register: sysctl_system
       changed_when: sysctl_system.rc == 0
+
+    - name: Add Docker’s official GPG key
+      ansible.builtin.shell: >-
+        set -o pipefail
+        && curl --fail --location --show-error --silent https://download.docker.com/linux/debian/gpg
+        | gpg --dearmor --output /usr/share/keyrings/docker-archive-keyring.gpg
+      args:
+        creates: /usr/share/keyrings/docker-archive-keyring.gpg
+        executable: /bin/bash
+
+    - name: Get distribution codename
+      ansible.builtin.command: lsb_release --codename --short
+      register: distribution_codename
+      changed_when: distribution_codename.rc == 0
+
+    - name: Set up the stable Docker repository
+      ansible.builtin.lineinfile:
+        create: yes
+        mode: 0644
+        path: /etc/apt/sources.list.d/docker.list
+        line: >-
+          deb [arch=arm64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
+          https://download.docker.com/linux/debian
+          {{ distribution_codename.stdout | trim }}
+          stable
+
+    - name: Install containerd
+      ansible.builtin.apt:
+        name: containerd.io
+        state: present
+        install_recommends: no
+        update_cache: true
+
+    - name: Get default config from containerd
+      ansible.builtin.command: containerd config default
+      register: containerd_config
+      changed_when: containerd_config.rc == 0
+
+    - name: Copy containerd config to file
+      ansible.builtin.copy:
+        content: |
+          {{ containerd_config.stdout }}
+        dest: /etc/containerd/config.toml
+        mode: 0644
+
+    - name: Use the systemd cgroup driver in containerd
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        insertafter: '^          \[plugins\."io\.containerd\.grpc\.v1\.cri"\.containerd\.runtimes\.runc\.options\]$'
+        line: "            SystemdCgroup = true"
 
     - name: Reboot
       ansible.builtin.reboot:
