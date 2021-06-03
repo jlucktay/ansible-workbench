@@ -59,7 +59,6 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
       - if the host has the `hc_ping` variable defined, adds a health check cron job with <https://healthchecks.io>
         where this `hc_ping` variable should be set to the UUID of a check
       - add the Docker and Kubernetes `apt` repositories and associated signing keys
-      - configure containerd to use the systemd driver for cgroups
 
 1. [Update Kubernetes packages](playbooks/update-kube-packages.yaml)
 

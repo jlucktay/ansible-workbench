@@ -140,24 +140,6 @@
         install_recommends: no
         update_cache: true
 
-    - name: Get default config from containerd
-      ansible.builtin.command: containerd config default
-      register: containerd_config
-      changed_when: containerd_config.rc == 0
-
-    - name: Copy containerd config to file
-      ansible.builtin.copy:
-        content: |
-          {{ containerd_config.stdout }}
-        dest: /etc/containerd/config.toml
-        mode: 0644
-
-    - name: Use the systemd cgroup driver in containerd
-      ansible.builtin.lineinfile:
-        path: /etc/containerd/config.toml
-        insertafter: '^          \[plugins\."io\.containerd\.grpc\.v1\.cri"\.containerd\.runtimes\.runc\.options\]$'
-        line: "            SystemdCgroup = true"
-
     - name: Reboot
       ansible.builtin.reboot:
 
