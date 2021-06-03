@@ -101,20 +101,17 @@
         - overlay
 
     - name: Let iptables see bridged traffic redux, and containerd prerequisites
-      ansible.builtin.lineinfile:
-        create: yes
-        mode: 0644
-        path: /etc/sysctl.d/99-kubernetes-cri.conf
-        line: net.{{ item }} = 1
+      ansible.posix.sysctl:
+        name: "{{ item }}"
+        reload: yes
+        state: present
+        sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
+        sysctl_set: yes
+        value: "1"
       loop:
-        - bridge.bridge-nf-call-ip6tables
-        - bridge.bridge-nf-call-iptables
-        - ipv4.ip_forward
-
-    - name: Apply sysctl params without reboot
-      ansible.builtin.command: sysctl --system
-      register: sysctl_system
-      changed_when: sysctl_system.rc == 0
+        - net.bridge.bridge-nf-call-ip6tables
+        - net.bridge.bridge-nf-call-iptables
+        - net.ipv4.ip_forward
 
     - name: Add Docker’s official GPG key
       ansible.builtin.shell: >-
