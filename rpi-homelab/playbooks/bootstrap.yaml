@@ -2,7 +2,6 @@
 ---
 - name: Bootstrapping
   become: true
-  gather_facts: no
   hosts: all
   tasks:
     - name: Set timezone to UTC
@@ -31,7 +30,6 @@
           - ca-certificates
           - curl
           - gnupg
-          - lsb-release
           - raspi-config
         state: present
         install_recommends: no
@@ -127,11 +125,6 @@
         creates: /usr/share/keyrings/docker-archive-keyring.gpg
         executable: /bin/bash
 
-    - name: Get distribution codename
-      ansible.builtin.command: lsb_release --codename --short
-      register: distribution_codename
-      changed_when: distribution_codename.rc == 0
-
     - name: Set up the stable Docker repository
       ansible.builtin.lineinfile:
         create: yes
@@ -140,7 +133,7 @@
         line: >-
           deb [arch=arm64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
           https://download.docker.com/linux/debian
-          {{ distribution_codename.stdout | trim }}
+          {{ ansible_distribution_release }}
           stable
 
     - name: Install containerd
