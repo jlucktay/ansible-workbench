@@ -83,7 +83,7 @@
       ansible.builtin.reboot:
 
     - name: "Sleep for 10s (if not last host) after rebooting {{ ansible_play_batch[0] }} then continue play"
-      wait_for:
+      ansible.builtin.wait_for:
         timeout: 10
       delegate_to: localhost
       when: ansible_play_batch[0] != ansible_play_hosts[-1]

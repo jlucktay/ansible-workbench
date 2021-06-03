@@ -119,7 +119,7 @@
       vars:
         arg_list: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].args }}"
 
-    - name: Patch arguments on metrics server deployment spec template
+    - name: Patch arguments on metrics server deployment spec template, and discard old replica sets
       kubernetes.core.k8s:
         state: present
         api_version: apps/v1
@@ -128,6 +128,7 @@
         namespace: kube-system
         resource_definition:
           spec:
+            revisionHistoryLimit: 0
             template:
               spec:
                 containers:
