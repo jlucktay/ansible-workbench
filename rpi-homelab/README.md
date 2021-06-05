@@ -66,6 +66,15 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
     ansible-playbook playbooks/update-kube-packages.yaml
     ```
 
+    - runs a [helper script](scripts/k8s-release.sh) to divine the semver of the latest non-prerelease patch for the
+      second-highest minor version of Kubernetes, hard-coded to major version 1, from the
+      [GitHub releases](https://github.com/kubernetes/kubernetes/releases)
+    - updates the `kubeadm`, `kubectl`, and `kubelet` packages on all nodes to this target release of Kubernetes
+    - pulls images used by `kubeadm`
+    - stores the Kubernetes target release semver in a [local temporary file](tmp/k8s-release-installed.txt) for future
+      reference, so that it can skip the needless update and image pull plays when the target release is already
+      installed
+
 1. [Initialise cluster](playbooks/initialise-cluster.yaml)
 
     ```shell

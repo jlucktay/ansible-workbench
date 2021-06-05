@@ -6,10 +6,26 @@
   gather_facts: no
   hosts: localhost
   tasks:
+    - name: Make sure local temporary directory exists
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/../tmp"
+        state: directory
+        mode: 0755
+
+    - name: Stat the temporary file storing the installed release
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../tmp/k8s-release-installed.txt"
+      register: stat_release_file
+
+    - name: Read local temporary file
+      ansible.builtin.set_fact:
+        k8s_release_installed: "{{ lookup('file', playbook_dir + '/../tmp/k8s-release-installed.txt' ) }}"
+      when: stat_release_file.stat.exists
+
     - name: Parse target release from GitHub API with helper script
       ansible.builtin.command: "{{ playbook_dir }}/../scripts/k8s-release.sh"
-      register: k8s_release
-      changed_when: false
+      register: k8s_release_target
+      changed_when: k8s_release_installed | default('0.0.0') | trim != k8s_release_target.stdout | trim
 
 - name: >-
     Update kube packages on all nodes in the cluster
@@ -18,6 +34,13 @@
   gather_facts: no
   hosts: all
   tasks:
+    - name: Skip update play, if target release matches installed
+      ansible.builtin.meta: end_play
+      when: >-
+        hostvars.localhost.k8s_release_installed | default('0.0.0') | trim
+        ==
+        hostvars.localhost.k8s_release_target.stdout | trim
+
     - name: Take packages off hold
       ansible.builtin.dpkg_selections:
         name: "{{ item }}"
@@ -36,7 +59,7 @@
         state: present
         update_cache: true
       vars:
-        k8s_release: "{{ hostvars.localhost.k8s_release.stdout }}"
+        k8s_release: "{{ hostvars.localhost.k8s_release_target.stdout }}"
 
     - name: Put packages back on hold
       ansible.builtin.dpkg_selections:
@@ -53,7 +76,25 @@
   gather_facts: no
   hosts: all
   tasks:
+    - name: Skip image pull play, if target release matches installed
+      ansible.builtin.meta: end_play
+      when: >-
+        hostvars.localhost.k8s_release_installed | default('0.0.0') | trim
+        ==
+        hostvars.localhost.k8s_release_target.stdout | trim
+
     - name: Pull images for imminent upgrade
       ansible.builtin.command: kubeadm config images pull
       register: image_pull
       changed_when: '"[config/images] Pulled" in image_pull.stdout'
+
+- name: Store target release in local file
+  gather_facts: no
+  hosts: localhost
+  tasks:
+    - name: Store target release in local file
+      ansible.builtin.copy:
+        content: |
+          {{ k8s_release_target.stdout }}
+        dest: "{{ playbook_dir }}/../tmp/k8s-release-installed.txt"
+        mode: 0644
