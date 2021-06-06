@@ -116,7 +116,10 @@ newly-generated kubeconfig file into your existing one.
 - accommodate multiple CP nodes for HA
 - refactor and reduce/boil down
   - make use of Ansible variables, instead of temporary files
-  - use roles structure: <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>
+  - use roles structure
+    - <https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html>
+    - <https://docs.ansible.com/ansible/latest/user_guide/sample_setup.html>
+    - <https://github.com/stancel/ansible-playbook-scaffolding>
 - ~~install the metric server as part of the initialise play~~
   - ~~patch the `--kubelet-insecure-tls` arg into place~~
     ~~([ref](https://github.com/kubernetes-sigs/metrics-server/issues/131#issuecomment-516505683))~~
