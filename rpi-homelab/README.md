@@ -48,6 +48,7 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
     ```
 
     - runs through some one-time (re)configuration tasks:
+      - pull down [my dotfiles](https://github.com/jlucktay/dotfiles)
       - Linux system level
         - timezone
         - hostname

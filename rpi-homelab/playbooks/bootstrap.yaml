@@ -4,6 +4,24 @@
   become: true
   hosts: all
   tasks:
+    - name: Set up dotfiles for both '{{ ansible_user }}' and 'root'
+      ansible.builtin.shell: >-
+        set -o pipefail
+        && curl --fail --location --silent https://git.io/jlucktay-dotfiles
+        | CHEZMOI_PURGE=1 bash
+      args:
+        executable: /bin/bash
+      changed_when: false
+      become_user: "{{ item  }}"
+      loop:
+        - "{{ ansible_user }}"
+        - root
+      tags: [dotfiles]
+
+    - name: Reset SSH connection to allow dotfile changes to affect users
+      meta: reset_connection
+      tags: [dotfiles]
+
     - name: Set timezone to UTC
       ansible.builtin.command: timedatectl set-timezone UTC
       register: set_timezone
