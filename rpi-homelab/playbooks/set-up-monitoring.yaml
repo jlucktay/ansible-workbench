@@ -1,0 +1,26 @@
+# set-up-monitoring.yaml
+---
+- name: Prometheus node_exporter
+  become: true
+  gather_facts: no
+  hosts: all
+  tasks:
+    - name: Get checksum file from latest release
+      ansible.builtin.uri:
+        url: https://github.com/prometheus/node_exporter/releases/latest/download/sha256sums.txt
+        return_content: true
+      register: prom_node_exp_release
+
+    - name: Run regex and get checksum and filename of arm64 archive in latest release
+      ansible.builtin.set_fact:
+        pner_checksum: "{{ prom_node_exp_release.content | regex_search(regexp,'\\1') | first }}"
+        pner_filename: "{{ prom_node_exp_release.content | regex_search(regexp,'\\2') | first }}"
+        pner_version: "{{ prom_node_exp_release.content | regex_search(regexp,'\\3') | first }}"
+      vars:
+        regexp: "(?is)([0-9a-f]{64})  (node_exporter-([0-9\\.]+)\\.linux-arm64.tar.gz)"
+
+    - name: Download file with check (sha256)
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ pner_version }}/{{ pner_filename }}"
+        dest: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
+        checksum: "sha256:{{ pner_checksum }}"
