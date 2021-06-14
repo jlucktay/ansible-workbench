@@ -33,6 +33,23 @@
         dest: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
         checksum: "sha256:{{ pner_checksum }}"
 
+    - name: Clean up older releases
+      ansible.builtin.find:
+        paths:
+          - /var/tmp/download/prometheus/node_exporter
+          - /var/tmp/unarchive/prometheus/node_exporter
+        recurse: no
+        file_type: directory
+        excludes:
+          - "v{{ pner_version }}"
+      register: old_releases
+
+    - name: Recursively remove old release directories
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_releases.files }}"
+
     - name: Unarchive a file that is already on the remote machine
       ansible.builtin.unarchive:
         src: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
@@ -65,3 +82,13 @@
         enabled: yes
         state: started
         daemon_reload: yes
+
+    - name: Quick liveness check
+      ansible.builtin.uri:
+        url: http://{{ pi_name }}:9100/metrics
+        method: "GET"
+        status_code:
+          - 200
+        follow_redirects: none
+      become: false
+      delegate_to: localhost
