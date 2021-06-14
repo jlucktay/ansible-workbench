@@ -92,3 +92,20 @@
         follow_redirects: none
       become: false
       delegate_to: localhost
+
+- name: Prometheus
+  become: true
+  hosts: controller_one
+  gather_facts: no
+  tasks:
+    - name: Make sure config directory exists
+      ansible.builtin.file:
+        path: /etc/prometheus
+        state: directory
+        mode: 0755
+
+    - name: Template config file
+      template:
+        src: prometheus.yaml.j2
+        dest: /etc/prometheus/prometheus.yaml
+        mode: 0644
