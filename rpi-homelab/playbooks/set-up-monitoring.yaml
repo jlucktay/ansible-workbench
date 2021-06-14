@@ -19,8 +19,28 @@
       vars:
         regexp: "(?is)([0-9a-f]{64})  (node_exporter-([0-9\\.]+)\\.linux-arm64.tar.gz)"
 
+    - name: Make sure local temporary directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      loop:
+        - "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}"
+        - "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}"
+
     - name: Download file with check (sha256)
       ansible.builtin.get_url:
         url: "https://github.com/prometheus/node_exporter/releases/download/v{{ pner_version }}/{{ pner_filename }}"
         dest: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
         checksum: "sha256:{{ pner_checksum }}"
+
+    - name: Unarchive a file that is already on the remote machine
+      ansible.builtin.unarchive:
+        src: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
+        dest: "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}"
+        remote_src: yes
+        include:
+          - "node_exporter-{{ pner_version }}.linux-arm64/node_exporter"
+        extra_opts:
+          - --strip-components=1
+        creates: "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}/node_exporter"
