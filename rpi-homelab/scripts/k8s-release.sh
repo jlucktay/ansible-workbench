@@ -8,11 +8,10 @@ script_dir="$(cd "$(dirname "${BASH_SOURCE[-1]}")" &> /dev/null && pwd)"
 
 source "$script_dir"/semver.sh
 
-mapfile -t k8s_release_tags < <(
-  curl --header "Accept: application/vnd.github.v3+json" --silent \
-    https://api.github.com/repos/kubernetes/kubernetes/releases?per_page=100 \
-    | jq --raw-output '.[].tag_name'
-)
+curl_k8s_release_tags=$(curl --header "Accept: application/vnd.github.v3+json" --silent \
+  https://api.github.com/repos/kubernetes/kubernetes/releases?per_page=100 \
+  | jq --raw-output '.[].tag_name')
+mapfile -t k8s_release_tags <<< "$curl_k8s_release_tags"
 
 # Map minor versions to their highest patch number
 declare -A minor_v_patch
@@ -26,7 +25,7 @@ for k8s_release_tag in "${k8s_release_tags[@]}"; do
   semverParseInto "$k8s_release_tag" local_major local_minor local_patch prerelease
 
   # Discard prereleases
-  if [ "$prerelease" != "" ]; then
+  if [[ $prerelease != "" ]]; then
     continue
   fi
 
@@ -36,7 +35,7 @@ for k8s_release_tag in "${k8s_release_tags[@]}"; do
     exit 1
   fi
 
-  if [ -n "${minor_v_patch[$local_minor]+is_set}" ] && ((minor_v_patch[$local_minor] >= local_patch)); then
+  if [[ -n ${minor_v_patch[$local_minor]+is_set} ]] && ((minor_v_patch[$local_minor] >= local_patch)); then
     continue
   fi
 
@@ -44,7 +43,8 @@ for k8s_release_tag in "${k8s_release_tags[@]}"; do
 done
 
 # Sort keys in map of minor version
-mapfile -d '' sorted_keys < <(printf '%s\0' "${!minor_v_patch[@]}" | sort --numeric-sort --zero-terminated)
+mvp_sorted_keys=$(printf '%s\n' "${!minor_v_patch[@]}" | sort --numeric-sort)
+mapfile -t sorted_keys <<< "$mvp_sorted_keys"
 
 # Find the index of the second highest minor version; number of elements minus two
 declare -i shmv_index=$((${#sorted_keys[@]} - 2))
