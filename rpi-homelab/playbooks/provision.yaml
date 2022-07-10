@@ -3,7 +3,7 @@
 - name: >-
     Provision the Raspberry Pi SD card(s) for a headless fresh install
     (https://www.raspberrypi.org/documentation/configuration/wireless/headless.md)
-  gather_facts: no
+  gather_facts: false
   hosts: localhost
   tasks:
     - name: Register output from helper script
@@ -17,9 +17,7 @@
         path: "{{ raspios64_release.stdout_lines[0] }}"
       register: stat_image
 
-    - name: >-
-        Get helper script to (resume) download, if we don't have the full image locally
-        (https://github.com/ansible/ansible/issues/23182)
+    - name: Get helper script to (resume) download, if we don't have the full image locally
       ansible.builtin.command:
         cmd: >-
           "{{ playbook_dir }}/../scripts/raspios64-release.sh"
@@ -31,22 +29,35 @@
         path: /Volumes/boot
       register: stat_mount
 
-    - name: End play if mount point does not exist
-      ansible.builtin.meta: end_play
-      when: not stat_mount.stat.exists
+    - name: Stat rpi-imager
+      ansible.builtin.stat:
+        path: "/Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager"
+      register: rpi_imager_binary
 
-    # TODO: run 'rpi-imager' from CLI here
-    # https://github.com/raspberrypi/rpi-imager
-    #
-    # $ "/Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager" --help
-    # /Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager [--debug] [--version] [--repo <repository URL>] [--qm <custom qm translation file>] [--disable-telemetry] [<image file to write>]
-    # -OR- /Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager --cli [--disable-verify] [--sha256 <expected hash>] [--debug] [--quiet] <image file to write> <destination drive device>
+    - name: End play if mount point or rpi-imager binary does not exist
+      ansible.builtin.meta: end_play
+      when: not stat_mount.stat.exists or not rpi_imager_binary.stat.exists
+
+    - name: Run rpi-imager
+      ansible.builtin.command:
+        cmd: >-
+          "/Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager"
+          --cli
+          ~/Downloads/raspios-arm64/2022-04-04-raspios-bullseye-arm64.img.xz
+          /dev/disk2
+      # TODO: look at which disk /Volume/boot is mounted from, and replace second argument above
+      register: run_rpi_imager
+      changed_when: run_rpi_imager.rc == 0
+
+    - name: Pause to allow user to re-mount ejected media
+      ansible.builtin.pause:
+        prompt: "Please reinsert the SD card now!"
 
     - name: Enable SSH daemon
       ansible.builtin.copy:
         content: ""
         dest: /Volumes/boot/ssh
-        force: no
+        force: false
         mode: 0664
 
     - name: Set up wireless LAN info via the '/boot' partition
