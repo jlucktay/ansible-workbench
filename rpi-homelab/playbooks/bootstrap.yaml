@@ -41,6 +41,7 @@
       ansible.builtin.slurp:
         src: /boot/cmdline.txt
       register: boot_cmdline
+      tags: kubernetes
 
     - name: Enable memory cgroup in kernel command line
       ansible.builtin.copy:
@@ -49,6 +50,7 @@
         dest: /boot/cmdline.txt
         mode: 0755
       when: '"cgroup_enable=memory cgroup_memory=1" not in boot_cmdline.content | b64decode | trim'
+      tags: kubernetes
 
     - name: Update some packages to latest
       ansible.builtin.apt:
@@ -82,6 +84,7 @@
       ansible.builtin.command: "raspi-config nonint do_hostname {{ pi_name }}"
       register: set_hostname
       changed_when: set_hostname.rc == 0
+      tags: redundant-rpi-imager
 
     - name: Disable swap permanently
       ansible.builtin.shell: >-
@@ -94,6 +97,7 @@
       args:
         executable: /bin/bash
         removes: /var/swap
+      tags: kubernetes
 
     - name: Disable audio
       ansible.builtin.lineinfile:
@@ -117,6 +121,7 @@
       loop:
         - br_netfilter
         - overlay
+      tags: kubernetes
 
     - name: Make sure that the modules necessary for Kubernetes and containerd are loaded redux
       ansible.builtin.lineinfile:
@@ -127,6 +132,7 @@
       loop:
         - br_netfilter
         - overlay
+      tags: kubernetes
 
     - name: Let iptables see bridged traffic redux, and containerd prerequisites
       ansible.posix.sysctl:
@@ -140,6 +146,7 @@
         - net.bridge.bridge-nf-call-ip6tables
         - net.bridge.bridge-nf-call-iptables
         - net.ipv4.ip_forward
+      tags: kubernetes
 
     - name: Add Docker's official GPG key
       ansible.builtin.shell: >-
@@ -149,6 +156,7 @@
       args:
         creates: /usr/share/keyrings/docker-archive-keyring.gpg
         executable: /bin/bash
+      tags: kubernetes
 
     - name: Set up the stable Docker repository
       ansible.builtin.lineinfile:
@@ -160,6 +168,7 @@
           https://download.docker.com/linux/debian
           {{ ansible_distribution_release }}
           stable
+      tags: kubernetes
 
     - name: Install containerd
       ansible.builtin.apt:
@@ -167,6 +176,7 @@
         state: present
         install_recommends: false
         update_cache: true
+      tags: kubernetes
 
     - name: Reboot
       ansible.builtin.reboot:
@@ -265,6 +275,7 @@
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
         mode: 0644
+      tags: kubernetes
 
     - name: Add the Kubernetes apt repository
       ansible.builtin.lineinfile:
@@ -274,6 +285,7 @@
         line: >-
           deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg]
           https://apt.kubernetes.io/ kubernetes-xenial main
+      tags: kubernetes
 
   handlers:
     - name: Restart Avahi daemon
