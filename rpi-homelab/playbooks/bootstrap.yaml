@@ -1,7 +1,8 @@
 # bootstrap.yaml
 ---
-- name: Bootstrapping
+- name: Bootstrapping - phase 1
   become: true
+  gather_facts: false
   hosts: all
   tasks:
     - name: Clean house before (re)trying dotfiles
@@ -21,11 +22,12 @@
         | bash
       args:
         executable: /bin/bash
-      changed_when: false
       become_user: "{{ item  }}"
       loop:
         - "{{ ansible_user }}"
         - root
+      register: set_up_dotfiles
+      changed_when: set_up_dotfiles.rc == 0
       tags: dotfiles
 
     - name: Reset SSH connection to allow dotfile changes to affect users
@@ -178,9 +180,21 @@
         update_cache: true
       tags: kubernetes
 
-    - name: Reboot
+- name: Bootstrapping - phase 2
+  become: true
+  gather_facts: false
+  hosts: all
+  serial: 1
+  tasks:
+    - name: First reboot
       ansible.builtin.reboot:
+      tags: reboot1
 
+- name: Bootstrapping - phase 3
+  become: true
+  gather_facts: false
+  hosts: all
+  tasks:
     - name: Configure Avahi
       community.general.ini_file:
         path: /etc/avahi/avahi-daemon.conf
@@ -288,6 +302,16 @@
           deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg]
           https://apt.kubernetes.io/ kubernetes-xenial main
       tags: kubernetes
+
+- name: Bootstrapping - phase 4
+  become: true
+  gather_facts: false
+  hosts: all
+  serial: 1
+  tasks:
+    - name: Second reboot
+      ansible.builtin.reboot:
+      tags: reboot2
 
   handlers:
     - name: Restart Avahi daemon
