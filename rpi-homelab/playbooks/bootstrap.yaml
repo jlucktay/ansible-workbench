@@ -237,23 +237,26 @@
 
     - name: Put some settings into crontab
       ansible.builtin.cron:
+        cron_file: healthchecks
+        user: "{{ ansible_user }}"
         env: true
         name: "{{ item.name }}"
-        job: "{{ item.job }}"
-        cron_file: /etc/crontab
-        user: root
+        value: "{{ item.value }}"
       with_items: "{{ cron_settings }}"
       vars:
         cron_settings:
           - name: MAILTO
-            job: ""
+            value: ""
           - name: PATH
-            job: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+            value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           - name: SHELL
-            job: /bin/bash
+            value: /bin/bash
+      tags: cron
 
     - name: If the host has the 'hc_ping' var defined, set up a cron job to ping https://healthchecks.io
       ansible.builtin.cron:
+        cron_file: healthchecks
+        user: "{{ ansible_user }}"
         name: Health check ping
         minute: "*/15"
         job: >-
@@ -266,9 +269,8 @@
           "https://hc-ping.com/{{ hc_ping }}"
           |&
           logger -t healthcheck
-        cron_file: /etc/crontab
-        user: root
       when: hc_ping is defined
+      tags: cron
 
     - name: Get Google Cloud public signing key
       ansible.builtin.get_url:
