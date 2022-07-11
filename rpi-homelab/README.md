@@ -18,10 +18,16 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
 
 1. [Provision](playbooks/provision.yaml)
 
+    - **NOTE [2022-07-11]:** this playbook is basically defunct, now that the latest release of Raspberry Pi OS does
+      not create a default username/password to log in with, and the rpi-imager CLI flags aren't yet robust enough to
+      supply all of the various values we want to load onto the SD card (public key, specific username/password, WiFi
+      password); [reference](https://www.raspberrypi.com/news/raspberry-pi-bullseye-update-april-2022/)
+
     ```shell
     ansible-playbook playbooks/provision.yaml
     ```
 
+    - note that this playbook uses some utilities and assumptions about paths that are specific to macOS
     - images an SD card for a fresh headless install
     - run once per SD card, moving each one in and out of the card reader between runs
     - TODO: the `wpa_supplicant.conf` file needs to be templated out, and the WiFi password put in a vault
@@ -29,6 +35,11 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
         under the *Using Ansible Vault to Store Sensitive Data* section
 
 1. [Deploy public key](playbooks/deploy-public-key.yaml)
+
+    - **NOTE [2022-07-11]:** this playbook is basically defunct, now that the latest release of Raspberry Pi OS does
+      not create a default username/password to log in with, and the rpi-imager CLI flags aren't yet robust enough to
+      supply all of the various values we want to load onto the SD card (public key, specific username/password, WiFi
+      password); [reference](https://www.raspberrypi.com/news/raspberry-pi-bullseye-update-april-2022/)
 
     - **NOTE:** this playbook requires the `ANSIBLE_HOST_KEY_CHECKING` environment variable and the `--ask-pass` flag
       when executed
@@ -60,6 +71,26 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
       - if the host has the `hc_ping` variable defined, adds a health check cron job with <https://healthchecks.io>
         where this `hc_ping` variable should be set to the UUID of a check
       - add the Docker and Kubernetes `apt` repositories and associated signing keys
+
+    - has some tags in place for cherry-picking various tasks
+
+      ```shell
+      $ ansible-playbook playbooks/bootstrap.yaml --list-tags
+
+      playbook: playbooks/bootstrap.yaml
+
+        play #1 (all): Bootstrapping - phase 1        TAGS: []
+            TASK TAGS: [dotfiles, kubernetes, redundant-rpi-imager]
+
+        play #2 (all): Bootstrapping - phase 2        TAGS: []
+            TASK TAGS: [reboot1]
+
+        play #3 (all): Bootstrapping - phase 3        TAGS: []
+            TASK TAGS: [cron, kubernetes]
+
+        play #4 (all): Bootstrapping - phase 4        TAGS: []
+            TASK TAGS: [reboot2]
+      ```
 
 1. [Update Kubernetes packages](playbooks/update-kube-packages.yaml)
 
@@ -102,10 +133,10 @@ If the initialise and teardown plays are run with the `cp_only` tag, then no wor
 
 ## Requirements
 
-The [deploy public key](playbooks/deploy-public-key.yaml) playbook requires the use of `sshpass`
-([man page](https://linux.die.net/man/1/sshpass) and
-[macOS Homebrew formula](https://github.com/nunnun/homebrew-sshpass/compare)) on the executing machine (probably
-`localhost`) in order to SSH into each remote host once using a password.
+~~The [deploy public key](playbooks/deploy-public-key.yaml) playbook requires the use of `sshpass`~~
+~~([man page](https://linux.die.net/man/1/sshpass) and~~
+~~[macOS Homebrew formula](https://github.com/nunnun/homebrew-sshpass/compare)) on the executing machine (probably~~
+~~`localhost`) in order to SSH into each remote host once using a password.~~
 
 The [initialise cluster](playbooks/initialise-cluster.yaml) playbook requires the use of
 [`yq` v4+](https://github.com/mikefarah/yq) on the executing machine (probably `localhost`) in order to merge the
