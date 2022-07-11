@@ -1,0 +1,32 @@
+# apt-maintenance.yaml
+# https://www.raspberrypi.com/documentation/computers/os.html#using-apt
+---
+- name: Updating and Upgrading Raspberry Pi OS - Using APT
+  become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Only run update if the last one is more than 3600 seconds (60 minutes or 1 hour) ago
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Remove useless packages from the cache
+      ansible.builtin.apt:
+        autoclean: true
+
+    - name: Remove dependencies that are no longer required
+      ansible.builtin.apt:
+        autoremove: true
+
+    - name: Upgrade all installed packages to their latest versions
+      ansible.builtin.apt:
+        upgrade: full
+
+    - name: Run the equivalent of "apt-get clean" as a separate step
+      ansible.builtin.apt:
+        clean: true
+
+    # - name: Upgrade the OS (apt-get dist-upgrade)
+    #   ansible.builtin.apt:
+    #     upgrade: dist
