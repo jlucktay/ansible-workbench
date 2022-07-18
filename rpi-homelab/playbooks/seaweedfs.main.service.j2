@@ -1,0 +1,15 @@
+[Unit]
+Description=SeaweedFS Main
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart={{ seaweedfs_latest_binary_path }} master
+WorkingDirectory={{ seaweedfs_latest_binary_path | dirname }}
+SyslogIdentifier=seaweedfs-main
+
+[Install]
+WantedBy=multi-user.target

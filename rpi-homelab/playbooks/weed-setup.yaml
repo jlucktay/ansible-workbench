@@ -1,0 +1,132 @@
+# weed-setup.yaml
+# https://github.com/chrislusf/seaweedfs
+---
+- name: Get seaweedfs installed
+  become: false
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Check latest release
+      delegate_to: localhost
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/chrislusf/seaweedfs/releases/latest
+        headers:
+          Accept: "application/vnd.github.v3+json"
+        body_format: json
+        return_content: true
+      register: seaweedfs_latest
+      until: seaweedfs_latest.status == 200
+      retries: 5
+      tags:
+        - cleanup
+
+    - name: Setting target path for latest binary
+      ansible.builtin.set_fact:
+        seaweedfs_latest_binary_path: "/usr/local/bin/weed_{{ seaweedfs_latest.json.tag_name }}"
+      tags:
+        - cleanup
+
+    - name: Stat latest binary
+      ansible.builtin.stat:
+        path: "{{ seaweedfs_latest_binary_path }}"
+      register: stat_latest_binary
+
+    - name: Install latest release binary
+      when: not stat_latest_binary.stat.exists
+      block:
+        - name: Setting latest release download URL
+          loop: "{{ seaweedfs_latest.json.assets }}"
+          when: item.name == "linux_arm64_large_disk.tar.gz"
+          ansible.builtin.set_fact:
+            seaweedfs_latest_download: "{{ item.browser_download_url }}"
+          loop_control:
+            label: "{{ item.name }}"
+
+        - name: Get checksum for latest release binary
+          delegate_to: localhost
+          ansible.builtin.uri:
+            url: "{{ seaweedfs_latest_download }}.md5"
+            return_content: true
+          register: seaweedfs_md5_checksum
+          until: seaweedfs_md5_checksum.status == 200
+          retries: 5
+
+        - name: Download latest release binary, and verify MD5 checksum
+          ansible.builtin.get_url:
+            url: "{{ seaweedfs_latest_download }}"
+            dest: "/tmp/weed_{{ seaweedfs_latest.json.tag_name }}_{{ seaweedfs_latest_download | basename }}"
+            checksum: "md5:{{ seaweedfs_md5_checksum.content }}"
+            mode: 0440
+            headers:
+              Accept: "application/octet-stream"
+
+        - name: Create temporary directory structure for this version of the binary
+          ansible.builtin.file:
+            path: "/tmp/weed/{{ seaweedfs_latest.json.tag_name }}"
+            state: directory
+            mode: 0755
+
+        - name: "Unarchiving latest release binary - {{ seaweedfs_latest.json.tag_name }}"
+          ansible.builtin.unarchive:
+            remote_src: true
+            src: "/tmp/weed_{{ seaweedfs_latest.json.tag_name }}_{{ seaweedfs_latest_download | basename }}"
+            dest: "/tmp/weed/{{ seaweedfs_latest.json.tag_name }}"
+            keep_newer: true
+            include:
+              - weed
+
+        - name: Install latest release binary
+          become: true
+          ansible.builtin.command:
+            cmd: mv "/tmp/weed/{{ seaweedfs_latest.json.tag_name }}/weed" "{{ seaweedfs_latest_binary_path }}"
+            removes: "/tmp/weed/{{ seaweedfs_latest.json.tag_name }}/weed"
+            creates: "{{ seaweedfs_latest_binary_path }}"
+
+        - name: Remove temporary directory structure for the binary
+          ansible.builtin.file:
+            path: "/tmp/weed"
+            state: absent
+
+        - name: Symlink generic name to latest release binary
+          become: true
+          ansible.builtin.file:
+            src: "{{ seaweedfs_latest_binary_path }}"
+            dest: /usr/local/bin/weed
+            state: link
+
+- name: Clean up binaries from old releases
+  become: true
+  gather_facts: false
+  hosts: all
+  tags:
+    - cleanup
+  tasks:
+    - name: Use a single pattern that contains a comma formatted as a list
+      ansible.builtin.find:
+        paths: "{{ seaweedfs_latest_binary_path | dirname }}"
+        file_type: file
+        use_regex: true
+        patterns:
+          - "^weed_"
+        excludes:
+          - "{{ seaweedfs_latest_binary_path | basename }}"
+      register: old_release_binaries
+
+    - name: Delete old binaries
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: "{{ old_release_binaries['files'] }}"
+      loop_control:
+        label: "{{ item.path }}"
+
+- name: Configure seaweedfs as main on rpi8-1 only
+  become: true
+  gather_facts: false
+  hosts: control_plane
+  tasks:
+    - name: Define unit file for systemd
+      ansible.builtin.template:
+        src: seaweedfs.main.service.j2
+        dest: /etc/systemd/system/seaweedfs.main.service
+        mode: 0664
