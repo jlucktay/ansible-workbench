@@ -7,7 +7,7 @@ Type=simple
 User=root
 Group=root
 
-ExecStart={{ seaweedfs_latest_binary_path }} master
+ExecStart=weed master
 WorkingDirectory={{ seaweedfs_latest_binary_path | dirname }}
 SyslogIdentifier=seaweedfs-main
 
