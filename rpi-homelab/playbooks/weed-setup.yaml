@@ -161,3 +161,20 @@
       loop:
         - conf
         - toml
+
+- name: Configure SeaweedFS 'weed volume' across rpi2-[123]
+  become: true
+  gather_facts: false
+  hosts: workers
+  tasks:
+    - name: Define SeaweedFS systemd unit file for 'weed volume'
+      ansible.builtin.copy:
+        src: seaweedfs.volume.service
+        dest: /etc/systemd/system/seaweedfs.volume.service
+        mode: 0644
+
+    - name: Copy SeaweedFS config file for 'weed volume'
+      ansible.builtin.copy:
+        src: seaweedfs.volume.conf.j2
+        dest: /etc/seaweedfs/volume.conf
+        mode: 0644

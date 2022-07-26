@@ -1,0 +1,15 @@
+[Unit]
+Description=SeaweedFS Volume
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart=weed volume -options=/etc/seaweedfs/volume.conf
+WorkingDirectory=/srv/seaweedfs
+SyslogIdentifier=seaweedfs-volume
+
+[Install]
+WantedBy=multi-user.target
