@@ -127,6 +127,6 @@
   tasks:
     - name: Define unit file for systemd
       ansible.builtin.template:
-        src: seaweedfs.main.service.j2
-        dest: /etc/systemd/system/seaweedfs.main.service
+        src: seaweedfs.master.service.j2
+        dest: /etc/systemd/system/seaweedfs.master.service
         mode: 0664

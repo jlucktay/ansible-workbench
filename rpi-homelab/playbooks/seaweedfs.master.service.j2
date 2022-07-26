@@ -1,0 +1,15 @@
+[Unit]
+Description=SeaweedFS Master
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart=weed master -options=/etc/seaweedfs/master.conf
+WorkingDirectory=/srv/seaweedfs
+SyslogIdentifier=seaweedfs-master
+
+[Install]
+WantedBy=multi-user.target
