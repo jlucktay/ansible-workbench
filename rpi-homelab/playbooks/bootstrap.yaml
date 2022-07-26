@@ -6,14 +6,21 @@
   hosts: all
   tasks:
     - name: Clean house before (re)trying dotfiles
-      ansible.builtin.file:
-        state: absent
-        path: "~/.local/share/chezmoi"
-      become_user: "{{ item  }}"
-      loop:
-        - "{{ ansible_user }}"
-        - root
       tags: dotfiles
+      block:
+        - name: Remove chezmoi binary
+          ansible.builtin.file:
+            state: absent
+            path: /usr/local/bin/chezmoi
+
+        - name: Remove chezmoi source directory
+          ansible.builtin.file:
+            state: absent
+            path: "~/.local/share/chezmoi"
+          become_user: "{{ item  }}"
+          loop:
+            - "{{ ansible_user }}"
+            - root
 
     - name: Set up dotfiles for both '{{ ansible_user }}' and 'root'
       ansible.builtin.shell: >-
@@ -188,7 +195,9 @@
   tasks:
     - name: First reboot
       ansible.builtin.reboot:
-      tags: reboot1
+      tags:
+        - reboot
+        - reboot1
 
 - name: Bootstrapping - phase 3
   become: true
