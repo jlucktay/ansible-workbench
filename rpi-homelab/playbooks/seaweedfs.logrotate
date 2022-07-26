@@ -1,0 +1,21 @@
+/var/log/seaweedfs/* {
+  # Rotation
+  rotate 7
+
+  # Frequency
+  daily
+
+  # File selection
+  missingok
+  notifempty
+
+  # Files and Folders
+  nocreate
+
+  # Compression
+  compress
+  delaycompress
+
+  # Mail
+  nomail
+}

@@ -36,7 +36,7 @@
       block:
         - name: Setting latest release download URL
           loop: "{{ seaweedfs_latest.json.assets }}"
-          when: item.name == "linux_arm64_large_disk.tar.gz"
+          when: item.name == "linux_arm64.tar.gz"
           ansible.builtin.set_fact:
             seaweedfs_latest_download: "{{ item.browser_download_url }}"
           loop_control:
@@ -120,13 +120,44 @@
       loop_control:
         label: "{{ item.path }}"
 
-- name: Configure seaweedfs as main on rpi8-1 only
+- name: Create SeaweedFS directories on all hosts
+  become: true
+  gather_facts: false
+  hosts: all
+  tasks:
+    - name: Create SeaweedFS directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      loop:
+        - /etc/seaweedfs
+        - /srv/seaweedfs
+        - /var/lib/seaweedfs/metadata
+        - /var/log/seaweedfs
+
+    - name: Copy logrotate file
+      ansible.builtin.copy:
+        src: seaweedfs.logrotate
+        dest: /etc/logrotate.d/seaweedfs
+        mode: 0644
+
+- name: Configure SeaweedFS 'weed master' on rpi8-1 only
   become: true
   gather_facts: false
   hosts: control_plane
   tasks:
-    - name: Define unit file for systemd
-      ansible.builtin.template:
-        src: seaweedfs.master.service.j2
+    - name: Define SeaweedFS systemd unit file for 'weed master'
+      ansible.builtin.copy:
+        src: seaweedfs.master.service
         dest: /etc/systemd/system/seaweedfs.master.service
-        mode: 0664
+        mode: 0644
+
+    - name: Copy SeaweedFS config files for 'weed master'
+      ansible.builtin.copy:
+        src: seaweedfs.master.{{ item }}
+        dest: /etc/seaweedfs/master.{{ item }}
+        mode: 0644
+      loop:
+        - conf
+        - toml

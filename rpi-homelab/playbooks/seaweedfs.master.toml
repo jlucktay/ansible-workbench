@@ -1,9 +1,6 @@
-# TOML config file for SeaweedFS master.
+# /etc/seaweedfs/master.toml
 #
-# Put this file to one of these locations, with descending priority:
-#  - ./master.toml
-#  - $HOME/.seaweedfs/master.toml
-#  - /etc/seaweedfs/master.toml
+# TOML config file for SeaweedFS master.
 #
 # Used with "weed master".
 
