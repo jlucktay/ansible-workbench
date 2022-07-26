@@ -4,7 +4,7 @@
     Initialise the control plane node
     (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#initializing-your-control-plane-node)
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: controller_one
   tasks:
     - name: Run 'kubeadm init'
@@ -21,13 +21,14 @@
 
 - name: Install a Pod network add-on
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: controller_one
   tasks:
     - name: Get Calico manifest
       ansible.builtin.get_url:
         url: https://docs.projectcalico.org/manifests/calico.yaml
         dest: /tmp/calico.yaml
+        mode: 0644
 
     - name: Install openshift Python package
       ansible.builtin.pip:
@@ -63,7 +64,7 @@
 
 - name: Join worker nodes to cluster
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: workers
   serial: 1
   tasks:
