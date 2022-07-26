@@ -133,6 +133,7 @@
       loop:
         - /etc/seaweedfs
         - /srv/seaweedfs
+        - /var/lib/seaweedfs/filer-leveldb2
         - /var/lib/seaweedfs/metadata
         - /var/log/seaweedfs
 
@@ -149,13 +150,13 @@
   tasks:
     - name: Define SeaweedFS systemd unit file for 'weed master'
       ansible.builtin.copy:
-        src: seaweedfs.master.service
-        dest: /etc/systemd/system/seaweedfs.master.service
+        src: seaweedfs-master.service
+        dest: /etc/systemd/system/seaweedfs-master.service
         mode: 0644
 
     - name: Copy SeaweedFS config files for 'weed master'
       ansible.builtin.copy:
-        src: seaweedfs.master.{{ item }}
+        src: seaweedfs-master.{{ item }}
         dest: /etc/seaweedfs/master.{{ item }}
         mode: 0644
       loop:
@@ -178,3 +179,23 @@
         src: seaweedfs.volume.conf.j2
         dest: /etc/seaweedfs/volume.conf
         mode: 0644
+
+- name: Configure SeaweedFS 'weed filer' on rpi8-1 only
+  become: true
+  gather_facts: false
+  hosts: control_plane
+  tasks:
+    - name: Define SeaweedFS systemd unit file for 'weed filer'
+      ansible.builtin.copy:
+        src: seaweedfs-filer.service
+        dest: /etc/systemd/system/seaweedfs-filer.service
+        mode: 0644
+
+    - name: Copy SeaweedFS config files for 'weed filer'
+      ansible.builtin.copy:
+        src: seaweedfs-filer.{{ item }}
+        dest: /etc/seaweedfs/filer.{{ item }}
+        mode: 0644
+      loop:
+        - conf
+        - toml

@@ -1,0 +1,10 @@
+# /etc/seaweedfs/filer.conf
+
+# If filer.toml is empty, use an embedded filer store in the directory.
+defaultStoreDir=/var/lib/seaweedfs/filer-leveldb2
+
+# Comma-separated master servers.
+master={{ hostvars['controller_one']['ansible_host'] }}:9333
+
+# Filer server HTTP listen port.
+port=8888

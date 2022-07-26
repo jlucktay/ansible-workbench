@@ -1,0 +1,15 @@
+[Unit]
+Description=SeaweedFS Filer
+After=seaweedfs-master.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+ExecStart=weed filer -options=/etc/seaweedfs/filer.conf
+WorkingDirectory=/srv/seaweedfs
+SyslogIdentifier=seaweedfs-filer
+
+[Install]
+WantedBy=multi-user.target
