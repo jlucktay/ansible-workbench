@@ -139,7 +139,7 @@
 
     - name: Copy logrotate file
       ansible.builtin.copy:
-        src: seaweedfs.logrotate
+        src: seaweedfs/seaweedfs.logrotate
         dest: /etc/logrotate.d/seaweedfs
         mode: 0644
 
@@ -150,13 +150,13 @@
   tasks:
     - name: Define SeaweedFS systemd unit file for 'weed master'
       ansible.builtin.copy:
-        src: seaweedfs-master.service
+        src: seaweedfs/seaweedfs-master.service
         dest: /etc/systemd/system/seaweedfs-master.service
         mode: 0644
 
     - name: Copy SeaweedFS config files for 'weed master'
       ansible.builtin.copy:
-        src: seaweedfs-master.{{ item }}
+        src: seaweedfs/seaweedfs-master.{{ item }}
         dest: /etc/seaweedfs/master.{{ item }}
         mode: 0644
       loop:
@@ -170,13 +170,13 @@
   tasks:
     - name: Define SeaweedFS systemd unit file for 'weed volume'
       ansible.builtin.copy:
-        src: seaweedfs.volume.service
+        src: seaweedfs/seaweedfs.volume.service
         dest: /etc/systemd/system/seaweedfs.volume.service
         mode: 0644
 
     - name: Copy SeaweedFS config file for 'weed volume'
       ansible.builtin.copy:
-        src: seaweedfs.volume.conf.j2
+        src: seaweedfs/seaweedfs.volume.conf.j2
         dest: /etc/seaweedfs/volume.conf
         mode: 0644
 
@@ -187,13 +187,13 @@
   tasks:
     - name: Define SeaweedFS systemd unit file for 'weed filer'
       ansible.builtin.copy:
-        src: seaweedfs-filer.service
+        src: seaweedfs/seaweedfs-filer.service
         dest: /etc/systemd/system/seaweedfs-filer.service
         mode: 0644
 
     - name: Copy SeaweedFS config files for 'weed filer'
       ansible.builtin.copy:
-        src: seaweedfs-filer.{{ item }}
+        src: seaweedfs/seaweedfs-filer.{{ item }}
         dest: /etc/seaweedfs/filer.{{ item }}
         mode: 0644
       loop:
