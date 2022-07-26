@@ -274,6 +274,7 @@
             value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           - name: SHELL
             value: /bin/bash
+      when: hc_ping is defined
       tags: cron
 
     - name: If the host has the 'hc_ping' var defined, set up a cron job to ping https://healthchecks.io
