@@ -16,26 +16,35 @@
         - name: Remove chezmoi source directory
           ansible.builtin.file:
             state: absent
-            path: "~/.local/share/chezmoi"
-          become_user: "{{ item  }}"
+            path: '~/.local/share/chezmoi'
+          become_user: '{{ item }}'
           loop:
-            - "{{ ansible_user }}"
+            - '{{ ansible_user }}'
             - root
 
-    - name: Set up dotfiles for both '{{ ansible_user }}' and 'root'
+    - name: Set up dotfiles for both 'root' and '{{ ansible_user }}'
       ansible.builtin.shell: >-
         set -o pipefail
-        && curl --fail --location --silent https://git.io/jlucktay-dotfiles
+        && curl --fail --location --silent https://raw.githubusercontent.com/jlucktay/dotfiles/main/bootstrap.sh
         | bash
       args:
         executable: /bin/bash
-      become_user: "{{ item  }}"
+      become_user: '{{ item }}'
       loop:
-        - "{{ ansible_user }}"
+        - '{{ ansible_user }}'
         - root
       register: set_up_dotfiles
       changed_when: set_up_dotfiles.rc == 0
       tags: dotfiles
+
+    - name: Turn off SSH login message
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config.d/rename_user.conf
+        regexp: '^Banner /usr/share/userconf-pi/sshd_banner$'
+        state: absent
+      notify:
+        - Restart SSH daemon
+      tags: sshd-banner
 
     - name: Reset SSH connection to allow dotfile changes to affect users
       ansible.builtin.meta: reset_connection
@@ -57,11 +66,11 @@
         content: |
           cgroup_enable=memory cgroup_memory=1 {{ boot_cmdline.content | b64decode | trim }}
         dest: /boot/cmdline.txt
-        mode: 0755
+        mode: '0o755'
       when: '"cgroup_enable=memory cgroup_memory=1" not in boot_cmdline.content | b64decode | trim'
       tags: kubernetes
 
-    - name: Update some packages to latest
+    - name: Update some specific packages
       ansible.builtin.apt:
         name:
           - apt-transport-https
@@ -72,7 +81,22 @@
           - raspi-config
         state: present
         install_recommends: false
-        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Safely upgrade packages that are already installed
+      ansible.builtin.apt:
+        upgrade: safe
+        only_upgrade: true
+        install_recommends: false
+        cache_valid_time: 3600
+
+    - name: Remove dependencies that are no longer required
+      ansible.builtin.apt:
+        autoremove: true
+
+    - name: Run the equivalent of "apt-get clean" as a separate step
+      ansible.builtin.apt:
+        clean: true
 
     - name: Don't autologin at boot
       ansible.builtin.command: raspi-config nonint do_boot_behaviour B1
@@ -90,7 +114,7 @@
       changed_when: reduce_gpu_memory.rc == 0
 
     - name: Set hostname
-      ansible.builtin.command: "raspi-config nonint do_hostname {{ pi_name }}"
+      ansible.builtin.command: 'raspi-config nonint do_hostname {{ pi_name }}'
       register: set_hostname
       changed_when: set_hostname.rc == 0
       tags: redundant-rpi-imager
@@ -111,7 +135,7 @@
     - name: Disable audio
       ansible.builtin.lineinfile:
         path: /boot/config.txt
-        regexp: "^dtparam=audio=on$"
+        regexp: '^dtparam=audio=on$'
         line: dtparam=audio=off
 
     - name: Disable Bluetooth
@@ -124,7 +148,7 @@
         (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#letting-iptables-see-bridged-traffic)
         (https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
         make sure that the modules necessary for Kubernetes and containerd are loaded
-      ansible.builtin.command: "modprobe {{ item }}"
+      ansible.builtin.command: 'modprobe {{ item }}'
       register: load_module
       changed_when: load_module.rc == 0
       loop:
@@ -135,9 +159,9 @@
     - name: Make sure that the modules necessary for Kubernetes and containerd are loaded redux
       ansible.builtin.lineinfile:
         create: true
-        mode: 0644
+        mode: '0o644'
         path: /etc/modules-load.d/kubernetes-cri.conf
-        line: "{{ item }}"
+        line: '{{ item }}'
       loop:
         - br_netfilter
         - overlay
@@ -145,12 +169,12 @@
 
     - name: Let iptables see bridged traffic redux, and containerd prerequisites
       ansible.posix.sysctl:
-        name: "{{ item }}"
+        name: '{{ item }}'
         reload: true
         state: present
         sysctl_file: /etc/sysctl.d/99-kubernetes-cri.conf
         sysctl_set: true
-        value: "1"
+        value: '1'
       loop:
         - net.bridge.bridge-nf-call-ip6tables
         - net.bridge.bridge-nf-call-iptables
@@ -170,7 +194,7 @@
     - name: Set up the stable Docker repository
       ansible.builtin.lineinfile:
         create: true
-        mode: 0644
+        mode: '0o644'
         path: /etc/apt/sources.list.d/docker.list
         line: >-
           deb [arch=arm64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg]
@@ -186,6 +210,13 @@
         install_recommends: false
         update_cache: true
       tags: kubernetes
+
+  handlers:
+    - name: Restart SSH daemon
+      ansible.builtin.systemd:
+        name: sshd
+        daemon_reload: true
+        state: restarted
 
 - name: Bootstrapping - phase 2
   become: true
@@ -207,14 +238,14 @@
     - name: Configure Avahi
       community.general.ini_file:
         path: /etc/avahi/avahi-daemon.conf
-        section: "{{ item.section }}"
-        option: "{{ item.option }}"
-        value: "{{ item.value }}"
+        section: '{{ item.section }}'
+        option: '{{ item.option }}'
+        value: '{{ item.value }}'
         no_extra_spaces: true
-        mode: 0644
+        mode: '0o644'
       notify:
         - Restart Avahi daemon
-      with_items: "{{ avahi_settings }}"
+      with_items: '{{ avahi_settings }}'
       vars:
         avahi_settings:
           #
@@ -222,16 +253,16 @@
           #
           - section: server
             option: host-name
-            value: "{{ pi_name }}"
+            value: '{{ pi_name }}'
           - section: server
             option: domain-name
             value: local
           - section: server
             option: use-ipv4
-            value: "yes"
+            value: 'yes'
           - section: server
             option: use-ipv6
-            value: "no"
+            value: 'no'
           - section: server
             option: allow-interfaces
             value: wlan0
@@ -240,36 +271,36 @@
             value: eth0
           - section: server
             option: disallow-other-stacks
-            value: "yes"
+            value: 'yes'
 
           #
           ## Section [publish]
           #
           - section: publish
             option: disable-publishing
-            value: "no"
+            value: 'no'
           - section: publish
             option: publish-addresses
-            value: "yes"
+            value: 'yes'
           - section: publish
             option: publish-hinfo
-            value: "yes"
+            value: 'yes'
           - section: publish
             option: publish-workstation
-            value: "yes"
+            value: 'yes'
 
-    - name: Put some settings into crontab
+    - name: Put some settings into crontab for healthchecks
       ansible.builtin.cron:
         cron_file: healthchecks
-        user: "{{ ansible_user }}"
+        user: '{{ ansible_user }}'
         env: true
-        name: "{{ item.name }}"
-        value: "{{ item.value }}"
-      with_items: "{{ cron_settings }}"
+        name: '{{ item.name }}'
+        value: '{{ item.value }}'
+      with_items: '{{ cron_settings }}'
       vars:
         cron_settings:
           - name: MAILTO
-            value: ""
+            value: ''
           - name: PATH
             value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
           - name: SHELL
@@ -280,9 +311,9 @@
     - name: If the host has the 'hc_ping' var defined, set up a cron job to ping https://healthchecks.io
       ansible.builtin.cron:
         cron_file: healthchecks
-        user: "{{ ansible_user }}"
+        user: '{{ ansible_user }}'
         name: Health check ping
-        minute: "*/15"
+        minute: '*/15'
         job: >-
           curl
           --fail
@@ -296,22 +327,164 @@
       when: hc_ping is defined
       tags: cron
 
+    - name: Stat Tailscale client binary
+      ansible.builtin.stat:
+        path: /usr/bin/tailscale
+      register: stat_tailscale
+      tags:
+        - tailscale
+
+    - name: Copy Tailscale cron script into place
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../scripts/tailscale-cron-check.sh'
+        dest: /usr/local/bin/tailscale-cron-check.sh
+        remote_src: false
+        mode: '0o755'
+        owner: root
+        group: root
+      when: stat_tailscale.stat.exists
+      tags:
+        - cron
+        - tailscale
+
+    - name: Put some settings into crontab for tailscale
+      ansible.builtin.cron:
+        cron_file: tailscale
+        user: root
+        env: true
+        name: '{{ item.name }}'
+        value: '{{ item.value }}'
+      with_items: '{{ cron_settings }}'
+      vars:
+        cron_settings:
+          - name: MAILTO
+            value: ''
+          - name: PATH
+            value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: SHELL
+            value: /bin/bash
+      when: stat_tailscale.stat.exists
+      tags:
+        - cron
+        - tailscale
+
+    - name: If the Tailscale client binary is present, set up a cron job to poll status and maybe stop Transmission
+      ansible.builtin.cron:
+        cron_file: tailscale
+        user: root
+        name: Tailscale status check
+        minute: '*'
+        job: /usr/local/bin/tailscale-cron-check.sh
+      when: stat_tailscale.stat.exists
+      tags:
+        - cron
+        - tailscale
+
+    - name: Pinging to check packet loss
+      tags: ping_packet_loss
+      block:
+        - name: Copy ping packet loss cron script into place
+          ansible.builtin.copy:
+            dest: /usr/local/bin/ping-packet-loss.sh
+            mode: '0o755'
+            owner: root
+            group: root
+            src: '{{ playbook_dir }}/../scripts/ping-packet-loss.sh'
+            remote_src: false
+          tags:
+            - cron
+
+        - name: Ensure log directory
+          ansible.builtin.file:
+            path: /var/log/ping_packet_loss
+            mode: '0o755'
+            owner: root
+            group: root
+            state: directory
+            recurse: false
+          tags:
+            - log
+
+        - name: Put some settings into crontab for pinging to check packet loss
+          ansible.builtin.cron:
+            name: '{{ item.name }}'
+            user: root
+            cron_file: ping_packet_loss
+            env: true
+            value: '{{ item.value }}'
+          with_items: '{{ cron_settings }}'
+          vars:
+            cron_settings:
+              - name: MAILTO
+                value: ''
+              - name: PATH
+                value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+              - name: SHELL
+                value: /bin/bash
+
+        - name: Set up a cron job to ping and check packet loss
+          ansible.builtin.cron:
+            name: Ping packet loss
+            user: root
+            job: /usr/local/bin/ping-packet-loss.sh
+            cron_file: ping_packet_loss
+            minute: '*'
+
+        - name: Set up logrotate config file
+          ansible.builtin.blockinfile:
+            path: /etc/logrotate.d/ping_packet_loss
+            mode: '0o644'
+            owner: root
+            group: root
+            block: |
+              /var/log/ping_packet_loss/ppl.*.log {
+                rotate 90
+                daily
+                missingok
+                maxsize 10M
+                nocreate
+                compress
+                delaycompress
+                compressoptions --best
+              }
+            create: true
+          tags:
+            - logrotate
+
     - name: Get Google Cloud public signing key
       ansible.builtin.get_url:
         url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
-        mode: 0644
+        mode: '0o644'
       tags: kubernetes
 
     - name: Add the Kubernetes apt repository
       ansible.builtin.lineinfile:
         create: true
-        mode: 0644
+        mode: '0o644'
         path: /etc/apt/sources.list.d/kubernetes.list
         line: >-
           deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg]
           https://apt.kubernetes.io/ kubernetes-xenial main
       tags: kubernetes
+
+    - name: Copy inode-solo script into place
+      ansible.builtin.copy:
+        src: '{{ playbook_dir }}/../scripts/inode-solo.sh'
+        dest: /usr/local/bin/inode-solo.sh
+        remote_src: false
+        mode: '0o755'
+        owner: root
+        group: root
+      tags:
+        - inode
+
+  handlers:
+    - name: Restart Avahi daemon
+      ansible.builtin.systemd:
+        name: avahi-daemon
+        daemon_reload: true
+        state: restarted
 
 - name: Bootstrapping - phase 4
   become: true
@@ -322,10 +495,3 @@
     - name: Second reboot
       ansible.builtin.reboot:
       tags: reboot2
-
-  handlers:
-    - name: Restart Avahi daemon
-      ansible.builtin.systemd:
-        name: avahi-daemon
-        daemon_reload: true
-        state: restarted

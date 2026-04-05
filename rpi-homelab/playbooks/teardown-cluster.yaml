@@ -3,7 +3,7 @@
 ---
 - name: Drain the worker nodes
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: controller_one
   tasks:
     - name: Drain worker node
@@ -17,7 +17,7 @@
 
 - name: Reset and clean up the worker nodes
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: workers
   tasks:
     - name: Run kubeadm reset
@@ -41,7 +41,7 @@
 
 - name: Delete the worker nodes
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: controller_one
   tasks:
     - name: Delete worker node
@@ -53,7 +53,7 @@
 
 - name: Reset and clean up the control plane(s)
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: control_plane
   tags: [cp_only]
   tasks:
@@ -73,7 +73,7 @@
       tags: [clean]
 
 - name: Rolling reboot across all nodes
-  gather_facts: no
+  gather_facts: false
   hosts: all
   serial: 1
   tags: [reboot]

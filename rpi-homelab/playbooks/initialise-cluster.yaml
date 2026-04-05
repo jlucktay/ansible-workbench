@@ -15,7 +15,8 @@
 
     - name: Run regexes and set 'kubeadm join' command as fact
       ansible.builtin.set_fact:
-        kubeadm_join: "{{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') }}"
+        kubeadm_join: >-
+          {{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') | first }}
       vars:
         regexp: "(?is)(kubeadm join .*)"
 
@@ -79,7 +80,7 @@
         owner: root
 
     - name: Run 'kubeadm join' on workers
-      ansible.builtin.command: "{{ hostvars['controller_one']['kubeadm_join'][0] }}"
+      ansible.builtin.command: "{{ hostvars.controller_one.kubeadm_join }}"
       changed_when: false
 
 - name: Post-init setup on control plane, and retrieve kubeconfig to local

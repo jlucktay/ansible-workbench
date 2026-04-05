@@ -3,16 +3,23 @@
 all:
   hosts:
     controller_one:
+      # Regular LAN IP
       ansible_host: 192.168.86.181
+      # # Tailscale IP
+      # ansible_host: 100.115.70.55
+      hc_ping: ea314e94-8563-43fe-9800-73f85abdc2d7
       pi_name: rpi8-1
     worker_one:
       ansible_host: 192.168.86.121
+      hc_ping: a05fac05-4e31-41ce-98ae-3ead14c97e15
       pi_name: rpi2-1
     worker_two:
       ansible_host: 192.168.86.122
+      hc_ping: 24a60bc6-a39b-419e-835b-360b5d93a057
       pi_name: rpi2-2
     worker_three:
       ansible_host: 192.168.86.123
+      hc_ping: d5e7b279-63e1-4710-a3f7-a1667ccab55f
       pi_name: rpi2-3
   children:
     control_plane:

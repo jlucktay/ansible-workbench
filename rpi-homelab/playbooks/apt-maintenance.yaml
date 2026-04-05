@@ -19,14 +19,14 @@
       ansible.builtin.apt:
         autoremove: true
 
-    - name: Upgrade all installed packages to their latest versions
+    # - name: Upgrade all installed packages to their latest versions
+    #   ansible.builtin.apt:
+    #     upgrade: full
+
+    - name: Upgrade the OS (apt-get dist-upgrade)
       ansible.builtin.apt:
-        upgrade: full
+        upgrade: dist
 
     - name: Run the equivalent of "apt-get clean" as a separate step
       ansible.builtin.apt:
         clean: true
-
-    # - name: Upgrade the OS (apt-get dist-upgrade)
-    #   ansible.builtin.apt:
-    #     upgrade: dist

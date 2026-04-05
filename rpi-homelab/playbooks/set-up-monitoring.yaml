@@ -1,5 +1,7 @@
 # set-up-monitoring.yaml
 ---
+# TODO: https://github.com/kubecost/kubectl-cost
+
 - name: Prometheus node_exporter
   become: true
   hosts: all
@@ -97,6 +99,7 @@
   become: true
   hosts: controller_one
   gather_facts: no
+  tags: [pro]
   tasks:
     - name: Make sure config directory exists
       ansible.builtin.file:

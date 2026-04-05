@@ -155,6 +155,9 @@ newly-generated kubeconfig file into your existing one.
   - ~~patch the `--kubelet-insecure-tls` arg into place~~
     ~~([ref](https://github.com/kubernetes-sigs/metrics-server/issues/131#issuecomment-516505683))~~
 
+- Samba `vfs_fruit` and `fruit:aapl` things
+  - <https://www.samba.org/samba/docs/current/man-html/vfs_fruit.8.html>
+
 ## SeaweedFS notes
 
 ### TODO

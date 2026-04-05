@@ -1,0 +1,14 @@
+# pi-cluster.yaml
+---
+- hosts: localhost
+  connection: local
+  gather_facts: yes
+  collections:
+    - containers.podman
+  pre_tasks:
+    - name: Loading common tasks
+      include_tasks: "common/main.yaml"
+
+  tasks:
+    - name: Run main playbook
+      include_tasks: "run/main.yaml"
