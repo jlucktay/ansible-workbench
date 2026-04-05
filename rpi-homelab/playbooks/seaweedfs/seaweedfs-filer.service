@@ -1,15 +1,17 @@
 [Unit]
-Description=SeaweedFS Filer
+Description=Filer server for SeaweedFS cluster
 After=seaweedfs-master.service
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=seaweedfs
+Group=seaweedfs
 
 ExecStart=weed filer -options=/etc/seaweedfs/filer.conf
+Restart=no
 WorkingDirectory=/srv/seaweedfs
 SyslogIdentifier=seaweedfs-filer
+KillSignal=SIGTERM
 
 [Install]
 WantedBy=multi-user.target

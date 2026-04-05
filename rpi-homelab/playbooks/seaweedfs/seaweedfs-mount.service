@@ -1,0 +1,17 @@
+[Unit]
+Description=Mount server for SeaweedFS cluster
+After=seaweedfs-filer.service
+
+[Service]
+Type=simple
+User=seaweedfs
+Group=seaweedfs
+
+ExecStart=weed mount -options=/etc/seaweedfs/mount.conf
+Restart=no
+WorkingDirectory=/srv/seaweedfs
+SyslogIdentifier=seaweedfs-mount
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

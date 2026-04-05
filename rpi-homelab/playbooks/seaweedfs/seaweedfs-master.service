@@ -1,15 +1,17 @@
 [Unit]
-Description=SeaweedFS Master
+Description=Master server for SeaweedFS cluster
 After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=seaweedfs
+Group=seaweedfs
 
 ExecStart=weed master -options=/etc/seaweedfs/master.conf
+Restart=no
 WorkingDirectory=/srv/seaweedfs
 SyslogIdentifier=seaweedfs-master
+KillSignal=SIGTERM
 
 [Install]
 WantedBy=multi-user.target

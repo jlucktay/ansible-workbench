@@ -1,6 +1,24 @@
 # weed-setup.yaml
 # https://github.com/chrislusf/seaweedfs
 ---
+- name: Set up 'seaweedfs' group and user
+  become: true
+  gather_facts: false
+  hosts: all
+  tags: useradd
+  tasks:
+    - name: Create 'seaweedfs' group
+      ansible.builtin.group:
+        name: seaweedfs
+
+    - name: Create 'seaweedfs' user
+      ansible.builtin.user:
+        name: seaweedfs
+        group: seaweedfs
+        create_home: true
+        home: /home/seaweedfs
+        shell: /bin/false
+
 - name: Get seaweedfs installed
   become: false
   gather_facts: false
@@ -125,14 +143,22 @@
   gather_facts: false
   hosts: all
   tasks:
-    - name: Create SeaweedFS directory structure
+    - name: Create SeaweedFS config directory
+      ansible.builtin.file:
+        path: /etc/seaweedfs
+        state: directory
+        mode: 0755
+
+    - name: Create SeaweedFS directory structure owned by 'seaweedfs' user
       ansible.builtin.file:
         path: "{{ item }}"
         state: directory
         mode: 0755
+        owner: seaweedfs
+        group: seaweedfs
       loop:
-        - /etc/seaweedfs
         - /srv/seaweedfs
+        - /var/cache/seaweedfs
         - /var/lib/seaweedfs/filer-leveldb2
         - /var/lib/seaweedfs/metadata
         - /var/log/seaweedfs
@@ -175,7 +201,7 @@
         mode: 0644
 
     - name: Copy SeaweedFS config file for 'weed volume'
-      ansible.builtin.copy:
+      ansible.builtin.template:
         src: seaweedfs/seaweedfs.volume.conf.j2
         dest: /etc/seaweedfs/volume.conf
         mode: 0644
@@ -199,3 +225,35 @@
       loop:
         - conf
         - toml
+
+- name: Configure SeaweedFS 'weed mount' on rpi8-1 only
+  become: true
+  gather_facts: false
+  hosts: control_plane
+  tasks:
+    - name: Define SeaweedFS systemd unit file for 'weed mount'
+      ansible.builtin.copy:
+        src: seaweedfs/seaweedfs-mount.service
+        dest: /etc/systemd/system/seaweedfs-mount.service
+        mode: 0644
+
+    - name: Copy SeaweedFS config file for 'weed mount'
+      ansible.builtin.copy:
+        src: seaweedfs/seaweedfs-mount.conf
+        dest: /etc/seaweedfs/mount.conf
+        mode: 0644
+
+  # tasks:
+  #   - name: Configure Avahi
+  #     ...
+  #     notify:
+  #       - Restart Avahi daemon
+  #
+  # ...
+  #
+  # handlers:
+  #   - name: Restart Avahi daemon
+  #     ansible.builtin.systemd:
+  #       name: avahi-daemon
+  #       daemon_reload: true
+  #       state: restarted

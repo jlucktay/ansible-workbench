@@ -1,15 +1,17 @@
 [Unit]
-Description=SeaweedFS Volume
+Description=Volume server for SeaweedFS cluster
 After=network.target
 
 [Service]
 Type=simple
-User=root
-Group=root
+User=seaweedfs
+Group=seaweedfs
 
 ExecStart=weed volume -options=/etc/seaweedfs/volume.conf
+Restart=no
 WorkingDirectory=/srv/seaweedfs
 SyslogIdentifier=seaweedfs-volume
+KillSignal=SIGTERM
 
 [Install]
 WantedBy=multi-user.target
