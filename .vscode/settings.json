@@ -1,4 +1,5 @@
 {
+  "ansible.python.interpreterPath": "/opt/homebrew/bin/python3",
   "files.associations": {
     "**/playbooks/*.yaml": "ansible"
   }
