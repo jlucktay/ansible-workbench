@@ -1,47 +1,50 @@
 # cleanup.yaml
 ---
-- hosts: loadbalancers
+- name: Load balancers
+  hosts: loadbalancers
   become: true
   tasks:
     - name: Remove Apache package from load balancer
-      apt:
+      ansible.builtin.apt:
         name: apache2
         state: absent
 
-- hosts: webservers
+- name: Web servers
+  hosts: webservers
   become: true
   tasks:
     - name: Remove services from web servers
-      apt:
+      ansible.builtin.apt:
         name:
           - apache2
           - php7.3
         state: absent
 
     - name: Clean up PHP config files
-      file:
+      ansible.builtin.file:
         path: /etc/php
         state: absent
 
     - name: Clean up web files
-      file:
+      ansible.builtin.file:
         path: /var/www
         state: absent
 
-- hosts: loadbalancers:webservers
+- name: Load balancers and web servers
+  hosts: loadbalancers:webservers
   become: true
   tasks:
     - name: Shut off Apache service
-      service:
+      ansible.builtin.service:
         name: apache2
-        enabled: no
+        enabled: false
         state: stopped
 
     - name: Remove dependencies that are no longer required
-      apt:
-        autoremove: yes
+      ansible.builtin.apt:
+        autoremove: true
 
     - name: Clean up Apache config files
-      file:
+      ansible.builtin.file:
         path: /etc/apache2
         state: absent

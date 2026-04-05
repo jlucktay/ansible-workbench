@@ -1,56 +1,66 @@
 # setup-app.yaml
 ---
-- hosts: webservers
+- name: Setup foo variables
+  hosts: localhost
+  tasks:
+    - name: Include vault file
+      ansible.builtin.include_vars:
+        file: ../vars/secret-variables.yaml
+      tags:
+        - always
+
+- name: Web servers for acloud.guru
+  hosts: webservers
   become: true
 
   vars:
-    path_to_app: "/var/www/html"
+    webservers_path_to_app: /var/www/html
 
-  vars_files:
-    - ../vars/secret-variables.yaml
+  # Moved static 'vars_files' to dynamic task above:
+  # https://github.com/ansible/ansible-lint/discussions/1465#discussioncomment-9211295
 
   vars_prompt:
-    - name: "upload_var"
-      prompt: "Upload the index.php file?"
+    - name: upload_var
+      prompt: Upload the index.php file?
 
-    - name: "create_var"
-      prompt: "Create info.php page?"
+    - name: create_var
+      prompt: Create info.php page?
 
   tasks:
     - name: Use secret password here
-      debug:
-        msg: "{{ secret_password }}"
+      ansible.builtin.debug:
+        msg: '{{ secret_password }}'
 
     - name: Upload application file
-      copy:
+      ansible.builtin.copy:
         src: ../index.php
-        dest: "{{ path_to_app }}"
-        mode: 0755
+        dest: '{{ webservers_path_to_app }}'
+        mode: '0o755'
       when: upload_var == 'yes'
       tags: upload
 
     - name: Remove default HTML file
-      file:
-        path: "{{ path_to_app }}/index.html"
+      ansible.builtin.file:
+        path: '{{ webservers_path_to_app }}/index.html'
         state: absent
 
     - name: Create simple info page
-      copy:
-        dest: "{{ path_to_app }}/info.php"
-        content: "<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>"
-        mode: "064"
+      ansible.builtin.copy:
+        dest: '{{ webservers_path_to_app }}/info.php'
+        content: '<h1>Info about our webserver: {{ ansible_hostname }}. These are changes.</h1>'
+        mode: '0o640'
       when: create_var == 'yes'
       tags: create
 
     - name: Configure php.ini file
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/php/7.3/apache2/php.ini
         regexp: ^short_open_tag
-        line: "short_open_tag = On"
+        line: short_open_tag = On
       notify: Restart Apache
 
   handlers:
     - name: Restart Apache
-      service:
+      ansible.builtin.service:
         name: apache2
         state: restarted

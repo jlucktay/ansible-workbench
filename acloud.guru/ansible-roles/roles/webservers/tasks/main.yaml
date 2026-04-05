@@ -1,34 +1,34 @@
 ---
 # tasks file for roles/webservers
 - name: Upload application file
-  copy:
+  ansible.builtin.copy:
     src: files/index.php
-    dest: "{{ path_to_app }}"
-    mode: 0755
+    dest: '{{ webservers_path_to_app }}'
+    mode: '0o755'
 
 - name: Remove default HTML file
-  file:
-    path: "{{ path_to_app }}/index.html"
+  ansible.builtin.file:
+    path: '{{ webservers_path_to_app }}/index.html'
     state: absent
 
 - name: Create simple info page
-  copy:
-    dest: "{{ path_to_app }}/info.php"
-    content: "<h1>Info about our webserver: {{ ansible_hostname }}</h1>"
-    mode: "064"
+  ansible.builtin.copy:
+    dest: '{{ webservers_path_to_app }}/info.php'
+    content: '<h1>Info about our webserver: {{ ansible_hostname }}</h1>'
+    mode: '0o640'
 
 - name: See directory contents
-  command: ls -la {{ path_to_app }}
-  register: dir_contents
+  ansible.builtin.command: ls -la {{ webservers_path_to_app }}
+  register: webservers_dir_contents
   changed_when: false
 
 - name: Debug directory contents
-  debug:
-    msg: "{{ dir_contents }}"
+  ansible.builtin.debug:
+    msg: '{{ webservers_dir_contents }}'
 
 - name: Configure php.ini file
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/php/7.3/apache2/php.ini
     regexp: ^short_open_tag
-    line: "short_open_tag = On"
+    line: short_open_tag = On
   notify: Restart Apache

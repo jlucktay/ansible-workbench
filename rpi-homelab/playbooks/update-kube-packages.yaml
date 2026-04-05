@@ -3,27 +3,27 @@
 - name: >-
     Check GitHub releases for the latest non-prerelease patch of the second-highest minor version
     (https://github.com/kubernetes/kubernetes/releases)
-  gather_facts: no
+  gather_facts: false
   hosts: localhost
   tasks:
     - name: Make sure local temporary directory exists
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/../tmp"
+        path: '{{ playbook_dir }}/../tmp'
         state: directory
-        mode: 0755
+        mode: '0o755'
 
     - name: Stat the temporary file storing the installed release
       ansible.builtin.stat:
-        path: "{{ playbook_dir }}/../tmp/k8s-release-installed.txt"
+        path: '{{ playbook_dir }}/../tmp/k8s-release-installed.txt'
       register: stat_release_file
 
     - name: Read local temporary file
       ansible.builtin.set_fact:
-        k8s_release_installed: "{{ lookup('file', playbook_dir + '/../tmp/k8s-release-installed.txt' ) }}"
+        k8s_release_installed: '{{ lookup("file", playbook_dir + "/../tmp/k8s-release-installed.txt") }}'
       when: stat_release_file.stat.exists
 
     - name: Parse target release from GitHub API with helper script
-      ansible.builtin.command: "{{ playbook_dir }}/../scripts/k8s-release.sh"
+      ansible.builtin.command: '{{ playbook_dir }}/../scripts/k8s-release.sh'
       register: k8s_release_target
       changed_when: k8s_release_installed | default('0.0.0') | trim != k8s_release_target.stdout | trim
 
@@ -31,7 +31,7 @@
     Update kube packages on all nodes in the cluster
     https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/#installing-kubeadm-on-your-hosts
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: all
   tasks:
     - name: Skip update play, if target release matches installed
@@ -43,27 +43,27 @@
 
     - name: Take packages off hold
       ansible.builtin.dpkg_selections:
-        name: "{{ item }}"
+        name: '{{ item }}'
         selection: install
       loop:
         - kubeadm
         - kubectl
         - kubelet
 
-    - name: "Upgrade packages to v{{ k8s_release }}"
+    - name: Upgrade packages to v{{ k8s_release }}
       ansible.builtin.apt:
         name:
-          - "kubeadm={{ k8s_release }}-00"
-          - "kubectl={{ k8s_release }}-00"
-          - "kubelet={{ k8s_release }}-00"
+          - kubeadm={{ k8s_release }}-00
+          - kubectl={{ k8s_release }}-00
+          - kubelet={{ k8s_release }}-00
         state: present
         update_cache: true
       vars:
-        k8s_release: "{{ hostvars.localhost.k8s_release_target.stdout }}"
+        k8s_release: '{{ hostvars.localhost.k8s_release_target.stdout }}'
 
     - name: Put packages back on hold
       ansible.builtin.dpkg_selections:
-        name: "{{ item }}"
+        name: '{{ item }}'
         selection: hold
       loop:
         - kubeadm
@@ -73,7 +73,7 @@
 - name: Pull images for imminent upgrade, one node at a time
   serial: 1
   become: true
-  gather_facts: no
+  gather_facts: false
   hosts: all
   tasks:
     - name: Skip image pull play, if target release matches installed
@@ -89,12 +89,12 @@
       changed_when: '"[config/images] Pulled" in image_pull.stdout'
 
 - name: Store target release in local file
-  gather_facts: no
+  gather_facts: false
   hosts: localhost
   tasks:
     - name: Store target release in local file
       ansible.builtin.copy:
         content: |
           {{ k8s_release_target.stdout }}
-        dest: "{{ playbook_dir }}/../tmp/k8s-release-installed.txt"
-        mode: 0644
+        dest: '{{ playbook_dir }}/../tmp/k8s-release-installed.txt'
+        mode: '0o644'

@@ -1,24 +1,25 @@
 # check-status.yaml
 ---
-- hosts: webservers:loadbalancers
+- name: Check status
+  hosts: webservers:loadbalancers
   tasks:
     - name: Check status of Apache (using 'command')
       become: true
-      command: service apache2 status
+      ansible.builtin.command: service apache2 status
       args:
-        warn: no
+        warn: false
       changed_when: false
 
     - name: This will not fail
-      command: /bin/false
-      ignore_errors: yes
+      ansible.builtin.command: /bin/false
+      ignore_errors: true
       changed_when: false
 
     - name: Gather facts about services
-      service_facts:
+      ansible.builtin.service_facts: {}
 
     - name: Check status of Apache (using 'service_facts')
-      debug:
+      ansible.builtin.debug:
         msg: >-
           {{ ansible_facts.services['apache2.service']['name'] }} /
           {{ ansible_facts.services['apache2.service']['source'] }} /

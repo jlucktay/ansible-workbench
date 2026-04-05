@@ -1,7 +1,8 @@
 # uname.yaml
 ---
-- hosts: webservers:loadbalancers
+- name: Run uname on web servers and load balancers
+  hosts: webservers:loadbalancers
   tasks:
     - name: Get OS type
-      shell: uname
+      ansible.builtin.command: uname
       changed_when: false

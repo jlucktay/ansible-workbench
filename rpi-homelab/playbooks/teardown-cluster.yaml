@@ -10,7 +10,7 @@
       ansible.builtin.command: >-
         kubectl drain {{ hostvars[item]['pi_name'] }}
         --delete-emptydir-data --force --ignore-daemonsets
-      with_items: "{{ groups['workers'] }}"
+      with_items: '{{ groups["workers"] }}'
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
       changed_when: false
@@ -26,14 +26,15 @@
 
     - name: Post-reset clean up
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: '{{ item }}'
         state: absent
       loop:
         - /etc/cni/net.d
         - /etc/kubernetes
         - /home/{{ ansible_user }}/.kube
         - /root/.kube
-      tags: [clean]
+      tags:
+        - clean
 
     - name: Reset and clean up iptables rules
       ansible.builtin.shell: iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
@@ -46,7 +47,7 @@
   tasks:
     - name: Delete worker node
       ansible.builtin.command: kubectl delete node {{ hostvars[item]['pi_name'] }}
-      with_items: "{{ groups['workers'] }}"
+      with_items: '{{ groups["workers"] }}'
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
       changed_when: false
@@ -55,7 +56,8 @@
   become: true
   gather_facts: false
   hosts: control_plane
-  tags: [cp_only]
+  tags:
+    - cp_only
   tasks:
     - name: Run kubeadm reset
       ansible.builtin.command: kubeadm reset --force
@@ -63,26 +65,28 @@
 
     - name: Post-reset clean up
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: '{{ item }}'
         state: absent
       loop:
         - /etc/cni/net.d
         - /etc/kubernetes
         - /home/{{ ansible_user }}/.kube
         - /root/.kube
-      tags: [clean]
+      tags:
+        - clean
 
 - name: Rolling reboot across all nodes
   gather_facts: false
   hosts: all
   serial: 1
-  tags: [reboot]
+  tags:
+    - reboot
   tasks:
-    - name: "Reboot {{ ansible_play_batch }}"
+    - name: Reboot {{ ansible_play_batch }}
       become: true
-      ansible.builtin.reboot:
+      ansible.builtin.reboot: {}
 
-    - name: "Sleep for 10s (if not last host) after rebooting {{ ansible_play_batch[0] }} then continue play"
+    - name: Sleep for 10s (if not last host) after rebooting {{ ansible_play_batch[0] }}
       ansible.builtin.wait_for:
         timeout: 10
       delegate_to: localhost

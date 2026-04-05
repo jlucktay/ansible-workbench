@@ -1,6 +1,7 @@
 # setup-app.yaml
 ---
-- hosts: webservers
+- name: App setup for acloud.guru
+  hosts: webservers
   become: true
   roles:
     - webservers

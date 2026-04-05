@@ -1,120 +1,121 @@
 # roles/monitoring_server/tasks/main.yaml
 ---
 - name: Creating prometheus user group
-  group:
-    name: "{{ groupId }}"
-  become: yes
+  ansible.builtin.group:
+    name: '{{ groupId }}'
+  become: true
   become_user: root
-  become_method: sudo
+  become_method: ansible.builtin.sudo
 
 - name: Creating prometheus user
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  user:
-    name: "{{ userId }}"
-    group: "{{ groupId }}"
-    system: yes
-    shell: "/sbin/nologin"
-    comment: "{{ userId }} nologin User"
-    createhome: "no"
+  become_method: ansible.builtin.sudo
+  ansible.builtin.user:
+    name: '{{ userId }}'
+    group: '{{ groupId }}'
+    system: true
+    shell: /sbin/nologin
+    comment: '{{ userId }} nologin User'
+    createhome: false
     state: present
 
 - name: Install prometheus
-  unarchive:
-    src: "https://github.com/prometheus/prometheus/releases/download/v{{ prometheusVersion }}/prometheus-{{ prometheusVersion }}.linux-armv7.tar.gz"
+  ansible.builtin.unarchive:
+    src: https://github.com/prometheus/prometheus/releases/download/v{{ prometheusVersion }}/prometheus-{{ prometheusVersion }}.linux-armv7.tar.gz
     dest: /tmp/
-    remote_src: yes
+    remote_src: true
 
 - name: Copy prometheus file to bin
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  copy:
-    src: "/tmp/prometheus-{{ prometheusVersion }}.linux-armv7/prometheus"
-    dest: "/usr/local/bin/prometheus"
-    owner: "{{ userId }}"
-    group: "{{ groupId }}"
-    remote_src: yes
-    mode: 0755
+  become_method: ansible.builtin.sudo
+  ansible.builtin.copy:
+    src: /tmp/prometheus-{{ prometheusVersion }}.linux-armv7/prometheus
+    dest: /usr/local/bin/prometheus
+    owner: '{{ userId }}'
+    group: '{{ groupId }}'
+    remote_src: true
+    mode: '0o755'
 
 - name: Delete prometheus tmp folder
-  file:
-    path: "/tmp/prometheus-{{ prometheusVersion }}.linux-armv7"
+  ansible.builtin.file:
+    path: /tmp/prometheus-{{ prometheusVersion }}.linux-armv7
     state: absent
 
 - name: Creates directory
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  file:
-    path: "/data/prometheus/"
+  become_method: ansible.builtin.sudo
+  ansible.builtin.file:
+    path: /data/prometheus/
     state: directory
-    owner: "{{ userId }}"
-    group: "{{ groupId }}"
-    mode: 0755
+    owner: '{{ userId }}'
+    group: '{{ groupId }}'
+    mode: '0o755'
 
 - name: Creates directory
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  file:
-    path: "/etc/prometheus/"
+  become_method: ansible.builtin.sudo
+  ansible.builtin.file:
+    path: /etc/prometheus/
     state: directory
-    owner: "{{ userId }}"
-    group: "{{ groupId }}"
-    mode: 0755
+    owner: '{{ userId }}'
+    group: '{{ groupId }}'
+    mode: '0o755'
 
 - name: Display IP address
-  debug:
+  ansible.builtin.debug:
     var: hostvars[inventory_hostname]['ansible_facts']['eth0']['ipv4']['address']
 - name: Display host
-  debug:
+  ansible.builtin.debug:
     var: inventory_hostname
 
-- name: config file
-  template:
+- name: Config file
+  ansible.builtin.template:
     src: prometheus.conf.j2
     dest: /etc/prometheus/prometheus.conf
-    mode: 0644
+    mode: '0o644'
 
 - name: Copy systemd init file
-  template:
+  ansible.builtin.template:
     src: init.service.j2
     dest: /etc/systemd/system/prometheus.service
-    mode: 0644
+    mode: '0o644'
   notify: systemd_reload
 
 - name: Start prometheus service
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  service:
+  become_method: ansible.builtin.sudo
+  ansible.builtin.service:
     name: prometheus
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Check if prometheus is accessible
-  uri:
+  ansible.builtin.uri:
     url: http://localhost:9090
     method: GET
     status_code:
       - 200
 
-- name: "Download Grafana"
-  get_url:
-    url: "https://dl.grafana.com/oss/release/grafana_{{ grafanaVersion }}_armhf.deb"
+- name: Download Grafana
+  ansible.builtin.get_url:
+    url: https://dl.grafana.com/oss/release/grafana_{{ grafanaVersion }}_armhf.deb
     dest: /tmp/
+    mode: '0o644'
 
-- name: "Install Grafana"
-  apt:
-    deb: "/tmp/grafana_{{ grafanaVersion }}_armhf.deb"
+- name: Install Grafana
+  ansible.builtin.apt:
+    deb: /tmp/grafana_{{ grafanaVersion }}_armhf.deb
 
 - name: Start Grafana service
-  become: yes
+  become: true
   become_user: root
-  become_method: sudo
-  service:
+  become_method: ansible.builtin.sudo
+  ansible.builtin.service:
     name: grafana-server
     state: started
-    enabled: yes
+    enabled: true

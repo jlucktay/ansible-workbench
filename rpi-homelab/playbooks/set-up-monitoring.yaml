@@ -14,81 +14,82 @@
 
     - name: Run regex and get checksum and filename of arm64 archive in latest release
       ansible.builtin.set_fact:
-        pner_checksum: "{{ prom_node_exp_release.content | regex_search(regexp,'\\1') | first }}"
-        pner_filename: "{{ prom_node_exp_release.content | regex_search(regexp,'\\2') | first }}"
-        pner_version: "{{ prom_node_exp_release.content | regex_search(regexp,'\\3') | first }}"
+        pner_checksum: '{{ prom_node_exp_release.content | regex_search(regexp, "\\1") | first }}'
+        pner_filename: '{{ prom_node_exp_release.content | regex_search(regexp, "\\2") | first }}'
+        pner_version: '{{ prom_node_exp_release.content | regex_search(regexp, "\\3") | first }}'
       vars:
-        regexp: "(?is)([0-9a-f]{64})  (node_exporter-([0-9\\.]+)\\.linux-arm64.tar.gz)"
+        regexp: (?is)([0-9a-f]{64})  (node_exporter-([0-9\\.]+)\\.linux-arm64.tar.gz)
 
     - name: Make sure local temporary directories exist
       ansible.builtin.file:
-        path: "{{ item }}"
+        path: '{{ item }}'
         state: directory
-        mode: 0755
+        mode: '0o755'
       loop:
-        - "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}"
-        - "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}"
+        - /var/tmp/download/prometheus/node_exporter/v{{ pner_version }}
+        - /var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}
 
     - name: Download file with check (sha256)
       ansible.builtin.get_url:
-        url: "https://github.com/prometheus/node_exporter/releases/download/v{{ pner_version }}/{{ pner_filename }}"
-        dest: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
-        checksum: "sha256:{{ pner_checksum }}"
+        url: https://github.com/prometheus/node_exporter/releases/download/v{{ pner_version }}/{{ pner_filename }}
+        dest: /var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}
+        checksum: sha256:{{ pner_checksum }}
+        mode: '0o644'
 
     - name: Clean up older releases
       ansible.builtin.find:
         paths:
           - /var/tmp/download/prometheus/node_exporter
           - /var/tmp/unarchive/prometheus/node_exporter
-        recurse: no
+        recurse: false
         file_type: directory
         excludes:
-          - "v{{ pner_version }}"
+          - v{{ pner_version }}
       register: old_releases
 
     - name: Recursively remove old release directories
       ansible.builtin.file:
-        path: "{{ item.path }}"
+        path: '{{ item.path }}'
         state: absent
-      loop: "{{ old_releases.files }}"
+      loop: '{{ old_releases.files }}'
 
     - name: Unarchive a file that is already on the remote machine
       ansible.builtin.unarchive:
-        src: "/var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}"
-        dest: "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}"
-        remote_src: yes
+        src: /var/tmp/download/prometheus/node_exporter/v{{ pner_version }}/{{ pner_filename }}
+        dest: /var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}
+        remote_src: true
         include:
-          - "node_exporter-{{ pner_version }}.linux-arm64/node_exporter"
+          - node_exporter-{{ pner_version }}.linux-arm64/node_exporter
         extra_opts:
           - --strip-components=1
-        creates: "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}/node_exporter"
+        creates: /var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}/node_exporter
 
     - name: Copy binary into place
       ansible.builtin.copy:
-        src: "/var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}/node_exporter"
+        src: /var/tmp/unarchive/prometheus/node_exporter/v{{ pner_version }}/node_exporter
         dest: /usr/local/bin/node_exporter
-        remote_src: yes
-        mode: 0755
-        owner: "{{ ansible_env.SUDO_UID }}"
-        group: "{{ ansible_env.SUDO_GID }}"
+        remote_src: true
+        mode: '0o755'
+        owner: '{{ ansible_env.SUDO_UID }}'
+        group: '{{ ansible_env.SUDO_GID }}'
 
     - name: Define unit file for service
       ansible.builtin.template:
         src: node_exporter.service.j2
         dest: /etc/systemd/system/node_exporter.service
-        mode: 0644
+        mode: '0o644'
 
     - name: Enable and start service
       ansible.builtin.systemd:
         name: node_exporter
-        enabled: yes
+        enabled: true
         state: started
-        daemon_reload: yes
+        daemon_reload: true
 
     - name: Quick liveness check
       ansible.builtin.uri:
         url: http://{{ pi_name }}:9100/metrics
-        method: "GET"
+        method: GET
         status_code:
           - 200
         follow_redirects: none
@@ -98,17 +99,18 @@
 - name: Prometheus
   become: true
   hosts: controller_one
-  gather_facts: no
-  tags: [pro]
+  gather_facts: false
+  tags:
+    - pro
   tasks:
     - name: Make sure config directory exists
       ansible.builtin.file:
         path: /etc/prometheus
         state: directory
-        mode: 0755
+        mode: '0o755'
 
     - name: Template config file
-      template:
+      ansible.builtin.template:
         src: prometheus.yaml.j2
         dest: /etc/prometheus/prometheus.yaml
-        mode: 0644
+        mode: '0o644'

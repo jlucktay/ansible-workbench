@@ -1,6 +1,13 @@
 # all-playbooks.yaml
 ---
-- import_playbook: install-services.yaml
-- import_playbook: setup-app.yaml
-- import_playbook: setup-lb.yaml
-- import_playbook: check-status.yaml
+- name: Install services
+  import_playbook: install-services.yaml
+
+- name: Setup app
+  import_playbook: setup-app.yaml
+
+- name: Setup LB
+  import_playbook: setup-lb.yaml
+
+- name: Check status
+  import_playbook: check-status.yaml

@@ -30,7 +30,6 @@ all:
         worker_one: {}
         worker_two: {}
         worker_three: {}
-
   vars:
     ansible_python_interpreter: /usr/bin/python3
     ansible_user: pi

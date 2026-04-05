@@ -10,15 +10,16 @@
     - name: Run 'kubeadm init'
       ansible.builtin.command: kubeadm init
       register: kubeadm_init
-      tags: [cp_only]
+      tags:
+        - cp_only
       changed_when: false
 
     - name: Run regexes and set 'kubeadm join' command as fact
       ansible.builtin.set_fact:
         kubeadm_join: >-
-          {{ kubeadm_init.stdout | regex_search(regexp,'\\1') | regex_replace(' \\\\+n +', ' ') | first }}
+          {{ kubeadm_init.stdout | regex_search(regexp, '\\1') | regex_replace(' \\\\+n +', ' ') | first }}
       vars:
-        regexp: "(?is)(kubeadm join .*)"
+        regexp: (?is)(kubeadm join .*)
 
 - name: Install a Pod network add-on
   become: true
@@ -29,7 +30,7 @@
       ansible.builtin.get_url:
         url: https://docs.projectcalico.org/manifests/calico.yaml
         dest: /tmp/calico.yaml
-        mode: 0644
+        mode: '0o644'
 
     - name: Install openshift Python package
       ansible.builtin.pip:
@@ -75,18 +76,19 @@
       ansible.builtin.file:
         path: /etc/kubernetes/manifests
         state: directory
-        mode: 0755
+        mode: '0o755'
         group: root
         owner: root
 
     - name: Run 'kubeadm join' on workers
-      ansible.builtin.command: "{{ hostvars.controller_one.kubeadm_join }}"
+      ansible.builtin.command: '{{ hostvars.controller_one.kubeadm_join }}'
       changed_when: false
 
 - name: Post-init setup on control plane, and retrieve kubeconfig to local
   become: true
   hosts: controller_one
-  tags: [cp_only]
+  tags:
+    - cp_only
   tasks:
     - name: De-taint controller to allow scheduling
       ansible.builtin.command: >-
@@ -117,9 +119,9 @@
 
     - name: Set the metrics server deployment args list into a new fact, and append one more arg
       ansible.builtin.set_fact:
-        updated_msd_args: "{{ arg_list | default([]) }} + [ '--kubelet-insecure-tls' ]"
+        updated_msd_args: '{{ arg_list | default([]) }} + [ "--kubelet-insecure-tls" ]'
       vars:
-        arg_list: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].args }}"
+        arg_list: '{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].args }}'
 
     - name: Patch arguments on metrics server deployment spec template, and discard old replica sets
       kubernetes.core.k8s:
@@ -134,15 +136,15 @@
             template:
               spec:
                 containers:
-                  - name: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].name }}"
-                    image: "{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].image }}"
-                    args: "{{ updated_msd_args }}"
+                  - name: '{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].name }}'
+                    image: '{{ metrics_server_deployment.resources[0].spec.template.spec.containers[0].image }}'
+                    args: '{{ updated_msd_args }}'
       environment:
         KUBECONFIG: /etc/kubernetes/admin.conf
 
     - name: Set temporary kubeconfig filename as fact
       ansible.builtin.set_fact:
-        kubeconfig_filename: "/tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+        kubeconfig_filename: /tmp/rpi-kubeconfig.{{ ansible_date_time.iso8601 }}.yaml
 
     - name: Generate kubectl credential
       ansible.builtin.shell: >-
@@ -162,35 +164,36 @@
 
     - name: Fetch kubeconfig from CP into local file
       ansible.builtin.fetch:
-        src: "{{ kubeconfig_filename }}"
-        dest: "{{ kubeconfig_filename }}"
+        src: '{{ kubeconfig_filename }}'
+        dest: '{{ kubeconfig_filename }}'
 
     - name: Clean up temporary kubeconfig file
       ansible.builtin.file:
-        path: "{{ kubeconfig_filename }}"
+        path: '{{ kubeconfig_filename }}'
         state: absent
 
 - name: Fold new kubeconfig into local
   # TODO: try slurping instead
   hosts: localhost
-  tags: [cp_only]
+  tags:
+    - cp_only
   tasks:
     - name: Set local kubeconfig filename fact, based on copy from remote
       ansible.builtin.set_fact:
-        kubeconfig_filename: "{{ path_components | join('/') }}"
+        kubeconfig_filename: '{{ path_components | join("/") }}'
       vars:
         path_components:
-          - "{{ hostvars['controller_one']['kubeconfig_filename'] }}"
-          - "controller_one"
-          - "{{ hostvars['controller_one']['kubeconfig_filename'] }}"
+          - '{{ hostvars["controller_one"]["kubeconfig_filename"] }}'
+          - controller_one
+          - '{{ hostvars["controller_one"]["kubeconfig_filename"] }}'
 
     - name: Extract the data from the YAML file into a fact
       ansible.builtin.set_fact:
-        original_kubeconfig: "{{ lookup('file', kubeconfig_filename) | from_yaml }}"
+        original_kubeconfig: '{{ lookup("file", kubeconfig_filename) | from_yaml }}'
 
     - name: Clean up temporary kubeconfig file
       ansible.builtin.file:
-        path: "{{ hostvars['controller_one']['kubeconfig_filename'] }}"
+        path: '{{ hostvars["controller_one"]["kubeconfig_filename"] }}'
         state: absent
 
     - name: Update the fact
@@ -208,17 +211,17 @@
 
     - name: Set updated kubeconfig file path as a fact
       ansible.builtin.set_fact:
-        updated_kubeconfig_file: "/tmp/kubeconfig.{{ ansible_date_time.iso8601 }}.yaml"
+        updated_kubeconfig_file: /tmp/kubeconfig.{{ ansible_date_time.iso8601 }}.yaml
 
     - name: Write updated kubeconfig fact back to a YAML file
       ansible.builtin.copy:
-        content: "{{ updated_kubeconfig.original_kubeconfig | to_nice_yaml }}"
-        dest: "{{ updated_kubeconfig_file }}"
-        mode: 0400
+        content: '{{ updated_kubeconfig.original_kubeconfig | to_nice_yaml }}'
+        dest: '{{ updated_kubeconfig_file }}'
+        mode: '0o400'
 
     - name: Set merged kubeconfig file path as a fact
       ansible.builtin.set_fact:
-        merged_kubeconfig_file: "/tmp/kubeconfig.merged.{{ ansible_date_time.iso8601 }}.yaml"
+        merged_kubeconfig_file: /tmp/kubeconfig.merged.{{ ansible_date_time.iso8601 }}.yaml
 
     - name: >-
         Merge with my current kubeconfig
@@ -233,7 +236,7 @@
 
     - name: Clean up temporary merged kubeconfig file
       ansible.builtin.file:
-        path: "{{ updated_kubeconfig_file }}"
+        path: '{{ updated_kubeconfig_file }}'
         state: absent
 
     - name: Move current kubeconfig out of the way, to keep a backup
@@ -252,5 +255,5 @@
 
     - name: Set mode on kubeconfig
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.kube/config"
-        mode: 0600
+        path: '{{ ansible_env.HOME }}/.kube/config'
+        mode: '0o600'

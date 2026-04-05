@@ -16,7 +16,8 @@
         - name: Remove chezmoi source directory
           ansible.builtin.file:
             state: absent
-            path: '~/.local/share/chezmoi'
+            path: ~/.local/share/chezmoi
+          become: true
           become_user: '{{ item }}'
           loop:
             - '{{ ansible_user }}'
@@ -29,6 +30,7 @@
         | bash
       args:
         executable: /bin/bash
+      become: true
       become_user: '{{ item }}'
       loop:
         - '{{ ansible_user }}'
@@ -40,7 +42,7 @@
     - name: Turn off SSH login message
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config.d/rename_user.conf
-        regexp: '^Banner /usr/share/userconf-pi/sshd_banner$'
+        regexp: ^Banner /usr/share/userconf-pi/sshd_banner$
         state: absent
       notify:
         - Restart SSH daemon
@@ -114,7 +116,7 @@
       changed_when: reduce_gpu_memory.rc == 0
 
     - name: Set hostname
-      ansible.builtin.command: 'raspi-config nonint do_hostname {{ pi_name }}'
+      ansible.builtin.command: raspi-config nonint do_hostname {{ pi_name }}
       register: set_hostname
       changed_when: set_hostname.rc == 0
       tags: redundant-rpi-imager
@@ -135,7 +137,7 @@
     - name: Disable audio
       ansible.builtin.lineinfile:
         path: /boot/config.txt
-        regexp: '^dtparam=audio=on$'
+        regexp: ^dtparam=audio=on$
         line: dtparam=audio=off
 
     - name: Disable Bluetooth
@@ -148,7 +150,7 @@
         (https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#letting-iptables-see-bridged-traffic)
         (https://kubernetes.io/docs/setup/production-environment/container-runtimes/#containerd)
         make sure that the modules necessary for Kubernetes and containerd are loaded
-      ansible.builtin.command: 'modprobe {{ item }}'
+      ansible.builtin.command: modprobe {{ item }}
       register: load_module
       changed_when: load_module.rc == 0
       loop:
@@ -225,7 +227,7 @@
   serial: 1
   tasks:
     - name: First reboot
-      ansible.builtin.reboot:
+      ansible.builtin.reboot: {}
       tags:
         - reboot
         - reboot1
@@ -249,7 +251,7 @@
       vars:
         avahi_settings:
           #
-          ## Section [server]
+          # # Section [server]
           #
           - section: server
             option: host-name
@@ -493,5 +495,5 @@
   serial: 1
   tasks:
     - name: Second reboot
-      ansible.builtin.reboot:
+      ansible.builtin.reboot: {}
       tags: reboot2

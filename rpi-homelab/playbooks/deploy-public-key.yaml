@@ -5,7 +5,7 @@
   tasks:
     - name: Read public key into variable/fact
       ansible.builtin.set_fact:
-        public_key: "{{ lookup('file', ansible_env.HOME + '/.ssh/id_rsa_rpi.pub') }}"
+        public_key: '{{ lookup("file", ansible_env.HOME + "/.ssh/id_rsa_rpi.pub") }}'
 
 - name: Deploy the public key to remote hosts
   gather_facts: false
@@ -13,15 +13,15 @@
   tasks:
     - name: Put public key in place
       ansible.posix.authorized_key:
-        user: "{{ ansible_user }}"
-        key: "{{ hostvars.localhost.public_key }}"
+        user: '{{ ansible_user }}'
+        key: '{{ hostvars.localhost.public_key }}'
 
     - name: Disable Password Authentication on all nodes
       become: true
       ansible.builtin.lineinfile:
         path: /etc/ssh/sshd_config
-        regexp: "^#PasswordAuthentication yes$"
-        line: "PasswordAuthentication no"
+        regexp: ^#PasswordAuthentication yes$
+        line: PasswordAuthentication no
       notify:
         - Restart SSH daemon
 

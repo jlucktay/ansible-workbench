@@ -1,0 +1,6 @@
+# .ansible-lint.yaml
+---
+profile: production
+
+exclude_paths:
+  - acloud.guru/vars/secret-variables.yaml

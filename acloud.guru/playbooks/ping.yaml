@@ -1,6 +1,7 @@
 # ping.yaml
 ---
-- hosts: all
+- name: Ping
+  hosts: all
   tasks:
     - name: Ping all servers
-      action: ping
+      action: ansible.builtin.ping

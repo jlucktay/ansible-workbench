@@ -8,13 +8,13 @@
   tasks:
     - name: Register output from helper script
       ansible.builtin.command:
-        cmd: "{{ playbook_dir }}/../scripts/raspios64-release.sh"
+        cmd: '{{ playbook_dir }}/../scripts/raspios64-release.sh'
       register: raspios64_release
       changed_when: raspios64_release.rc == 0
 
     - name: Stat local image
       ansible.builtin.stat:
-        path: "{{ raspios64_release.stdout_lines[0] }}"
+        path: '{{ raspios64_release.stdout_lines[0] }}'
       register: stat_image
 
     - name: Get helper script to (resume) download, if we don't have the full image locally
@@ -31,7 +31,7 @@
 
     - name: Stat rpi-imager
       ansible.builtin.stat:
-        path: "/Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager"
+        path: /Applications/Raspberry Pi Imager.app/Contents/MacOS/rpi-imager
       register: rpi_imager_binary
 
     - name: End play if mount point or rpi-imager binary does not exist
@@ -51,20 +51,20 @@
 
     - name: Pause to allow user to re-mount ejected media
       ansible.builtin.pause:
-        prompt: "Please reinsert the SD card now!"
+        prompt: Please reinsert the SD card now!
 
     - name: Enable SSH daemon
       ansible.builtin.copy:
-        content: ""
+        content: ''
         dest: /Volumes/boot/ssh
         force: false
-        mode: 0664
+        mode: '0o664'
 
     - name: Set up wireless LAN info via the '/boot' partition
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../wpa_supplicant.conf"
-        dest: "/Volumes/boot/wpa_supplicant.conf"
-        mode: 0664
+        src: '{{ playbook_dir }}/../wpa_supplicant.conf'
+        dest: /Volumes/boot/wpa_supplicant.conf
+        mode: '0o664'
 
     - name: Eject SD card
       ansible.builtin.command:
