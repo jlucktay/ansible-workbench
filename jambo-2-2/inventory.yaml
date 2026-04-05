@@ -1,0 +1,6 @@
+# jambo-2-2/inventory.yaml
+---
+all:
+  hosts:
+    jambo:
+      ansible_host: jambo-2-2.local
