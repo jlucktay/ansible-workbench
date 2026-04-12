@@ -3,6 +3,7 @@
 - name: Check status
   hosts: webservers:loadbalancers
   tasks:
+    # noqa: command-instead-of-module inline-env-var # Demonstration purposes.
     - name: Check status of Apache (using 'command')
       become: true
       ansible.builtin.command: service apache2 status
@@ -10,6 +11,7 @@
         warn: false
       changed_when: false
 
+    # noqa: ignore-errors # Demonstration purposes.
     - name: This will not fail
       ansible.builtin.command: /bin/false
       ignore_errors: true

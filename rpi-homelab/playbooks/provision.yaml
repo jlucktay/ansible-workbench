@@ -23,6 +23,7 @@
           "{{ playbook_dir }}/../scripts/raspios64-release.sh"
           --download
       when: stat_image.stat.size < raspios64_release.stdout_lines[1] | int
+      changed_when: stat_image.stat.size != raspios64_release.stdout_lines[1] | int
 
     - name: Stat mount point
       ansible.builtin.stat:
