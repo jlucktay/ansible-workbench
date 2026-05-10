@@ -1,7 +1,10 @@
 ---
+name: Ansible playbook syntax check
+
 on: # yamllint disable-line rule:truthy
   push:
     paths:
+      - .github/workflows/syntax-check.yaml
       - playbooks/**
 
 defaults:
@@ -9,10 +12,14 @@ defaults:
     shell: bash
 
 jobs:
-  yamllint:
+  syntax-check:
     runs-on: ubuntu-slim
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+
+      - run: pip install ansible
 
       - run: ansible-playbook --syntax-check playbooks/*.yaml

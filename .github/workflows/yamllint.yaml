@@ -1,4 +1,6 @@
 ---
+name: yamllint
+
 on: push # yamllint disable-line rule:truthy
 
 defaults:
