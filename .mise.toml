@@ -1,2 +1,2 @@
 [tools]
-ansible = { version = "13", pipx_args = "--include-deps", uvx = "true" }
+ansible = { version = "13", uvx = "true", uvx_args = "--with-executables-from ansible-core,ansible-lint,molecule" }
