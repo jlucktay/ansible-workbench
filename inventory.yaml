@@ -14,12 +14,6 @@ all:
     raspberry_pi:
       hosts:
         main: {}
-        worker-one: {}
-        worker-two: {}
-        worker-three: {}
-    monitoring_server:
-      hosts:
-        main: {}
   vars:
     ansible_python_interpreter: /usr/bin/python3
     ansible_user: pi

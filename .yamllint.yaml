@@ -53,3 +53,7 @@ rules:
     check-keys: true
     quote-type: single
     required: only-when-needed
+
+  truthy:
+    # The GHA workflow trigger key 'on' clashes with this.
+    check-keys: true
